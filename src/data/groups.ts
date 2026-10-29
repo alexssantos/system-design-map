@@ -1,0 +1,88 @@
+import type { Group } from './types';
+
+export const groups: Group[] = [
+  {
+    id: 'fundamentos',
+    name: 'Fundamentos e estimativas',
+    boardTheme: 'Temas 1 e 2',
+    color: '#4f7cff',
+    description: 'Como medir e dimensionar um sistema antes de desenhá-lo.',
+  },
+  {
+    id: 'comunicacao',
+    name: 'APIs e comunicação',
+    boardTheme: 'Tema 3',
+    color: '#00a3a3',
+    description: 'Contratos entre clientes e serviços, síncronos e em tempo real.',
+  },
+  {
+    id: 'dados',
+    name: 'Bancos de dados e armazenamento',
+    boardTheme: 'Tema 4',
+    color: '#8b5cf6',
+    description: 'Modelagem, índices, transações, replicação e particionamento.',
+  },
+  {
+    id: 'cache',
+    name: 'Cache e CDN',
+    boardTheme: 'Tema 5',
+    color: '#e0662d',
+    description: 'Tirar leitura do caminho do banco e aproximar dados do usuário.',
+  },
+  {
+    id: 'trafego',
+    name: 'Balanceamento e tráfego',
+    boardTheme: 'Tema 6',
+    color: '#d1477a',
+    description: 'Distribuir e controlar a carga que chega ao sistema.',
+  },
+  {
+    id: 'assincrono',
+    name: 'Mensageria e assíncrono',
+    boardTheme: 'Tema 7',
+    color: '#2e9e5b',
+    description: 'Desacoplar produtores e consumidores e tirar trabalho do caminho crítico.',
+  },
+  {
+    id: 'consistencia',
+    name: 'Consistência e consenso',
+    boardTheme: 'Tema 8',
+    color: '#b08400',
+    description: 'O que cada réplica enxerga, e como nós concordam entre si.',
+  },
+  {
+    id: 'resiliencia',
+    name: 'Confiabilidade e resiliência',
+    boardTheme: 'Tema 9',
+    color: '#d64545',
+    description: 'Falhar de forma contida e previsível em vez de cair em cascata.',
+  },
+  {
+    id: 'arquitetura',
+    name: 'Arquitetura de serviços',
+    boardTheme: 'Tema 10',
+    color: '#5b6b8c',
+    description: 'Como dividir o sistema em serviços e manter consistência entre eles.',
+  },
+  {
+    id: 'producao',
+    name: 'Observabilidade e segurança',
+    boardTheme: 'Tema 11',
+    color: '#6b7280',
+    description: 'Operar, medir e proteger o sistema em produção.',
+  },
+  {
+    id: 'estruturas',
+    name: 'Estruturas de dados especializadas',
+    boardTheme: 'Aparecem nos casos',
+    color: '#0f8fb8',
+    description: 'A estrutura certa costuma ser o “truque” que destrava o caso.',
+  },
+  {
+    id: 'codigo',
+    name: 'Design patterns de código',
+    boardTheme: 'Novo (não está no board)',
+    color: '#c2410c',
+    description: 'Padrões GoF que aparecem dentro dos serviços dos casos, com ganho concreto.',
+  },
+];
