@@ -10,6 +10,14 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.4.0] - 2026-10-29
+
+### Adicionado
+
+- Botões de download em PNG no cabeçalho do mapa: **Conexões** baixa o tópico ou caso selecionado junto com tudo o que se liga a ele (fica desligado até você selecionar algo) e **Mapa inteiro** baixa o mapa completo com todas as áreas.
+- Botão de download do diagrama do caso, no modal e na guia nova. A imagem sai no tema atual e com as linhas coloridas, sem os pontos animados.
+- O ícone do mapa agora é a foto do perfil do GitHub de alexssantos, com um pulse suave em volta, e abre o perfil numa guia nova. A foto fica colorida ao passar o mouse. Quem prefere menos movimento (prefers-reduced-motion) não vê a animação.
+
 ## [0.3.0] - 2026-10-29
 
 ### Adicionado
@@ -66,7 +74,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.3.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/alexssantos/system-design-map/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/alexssantos/system-design-map/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/alexssantos/system-design-map/compare/v0.1.0...v0.2.0

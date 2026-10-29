@@ -7,17 +7,21 @@ import {
   type Edge,
   type Node,
 } from '@xyflow/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DetailPanel } from './components/DetailPanel';
 import { DiagramModal, DiagramPage } from './components/DiagramModal';
 import { TextField } from './components/kit/TextField';
 import { nodeTypes } from './components/nodes';
 import { diagramByCase } from './diagrams/data';
-import { Badge, IconButton, SegmentedControl, Switch } from './ui-kit';
+import { exportFlowPng, runExport } from './export/flowImage';
+import { Avatar, Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
 import { cases, edges as graphEdges, groupById, groups, neighborsOf, topicById, topics, topicsByCase } from './data/graph';
 import type { Level } from './data/types';
 import type { Theme } from './theme';
 import { CASE_W, NODE_H, NODE_W, computeLayout } from './layout';
+
+const GITHUB_USER = 'alexssantos';
+const isContainer = (id: string) => id.startsWith('group:') || id.startsWith('band:');
 
 type LevelFocus = Level | 'all';
 
@@ -73,6 +77,8 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
   const [showPatterns, setShowPatterns] = useState(true);
   const [showAllEdges, setShowAllEdges] = useState(false);
   const [query, setQuery] = useState('');
+  const [exporting, setExporting] = useState<'all' | 'selection' | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
 
   const focus = hovered ?? selected;
@@ -190,11 +196,37 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
     [flow],
   );
 
+  const exportMap = (which: 'all' | 'selection') => {
+    if (!canvasRef.current || exporting) return;
+    const root = canvasRef.current;
+    const around = which === 'selection' && selected ? new Set([selected, ...neighborsOf(selected)]) : null;
+    const name = which === 'selection' && selected ? `conexoes ${topicById.get(selected)?.title ?? cases.find((c) => c.id === selected)?.title ?? selected}` : 'mapa de system design';
+    runExport(
+      (busy) => setExporting(busy ? which : null),
+      () =>
+        exportFlowPng(root, {
+          fileName: name,
+          isContainer,
+          includeNode: around ? (id) => around.has(id) : undefined,
+          includeEdge: around ? (id) => graphEdges.some((e) => e.id === id && (e.source === selected || e.target === selected)) : undefined,
+        }),
+    );
+  };
+
   return (
     <div className="app">
       <header className="toolbar">
         <div className="brand">
-          <span className="brand__mark" aria-hidden />
+          <a
+            className="brand__avatar"
+            href={`https://github.com/${GITHUB_USER}`}
+            target="_blank"
+            rel="noreferrer"
+            title={`Perfil de ${GITHUB_USER} no GitHub`}
+            aria-label={`Abrir o perfil de ${GITHUB_USER} no GitHub`}
+          >
+            <Avatar name={GITHUB_USER} src={`https://github.com/${GITHUB_USER}.png?size=96`} size={34} />
+          </a>
           <div>
             <strong>Mapa de System Design</strong>
             <span className="muted">
@@ -227,6 +259,30 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
         <Badge tone="accent" dot>
           Clique duplo num caso abre o diagrama
         </Badge>
+        <div className="toolbar__downloads" role="group" aria-label="Baixar imagem">
+          <Button
+            variant="dark"
+            size="sm"
+            icon="download"
+            disabled={!selected || Boolean(exporting)}
+            loading={exporting === 'selection'}
+            title={selected ? 'Baixa o item selecionado e as conexões dele em PNG' : 'Selecione um tópico ou caso no mapa'}
+            onClick={() => exportMap('selection')}
+          >
+            Conexões
+          </Button>
+          <Button
+            variant="dark"
+            size="sm"
+            icon="download"
+            disabled={Boolean(exporting)}
+            loading={exporting === 'all'}
+            title="Baixa o mapa inteiro em PNG"
+            onClick={() => exportMap('all')}
+          >
+            Mapa inteiro
+          </Button>
+        </div>
         <IconButton
           icon={theme === 'dark' ? 'sun' : 'moon'}
           label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
@@ -235,7 +291,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
         />
       </header>
       <div className="body">
-        <div className="canvas">
+        <div className="canvas" ref={canvasRef}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
