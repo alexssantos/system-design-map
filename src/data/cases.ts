@@ -15,9 +15,43 @@ export const cases: StudyCase[] = [
       'Como dois servidores evitam gerar a mesma chave sem consultar um ponto central a cada requisição?',
       'Um link viralizou e recebe 50 mil acessos por segundo. O que quebra primeiro?',
       'Como contar cliques em tempo real sem atrasar o redirect?',
+      'Por que 7 caracteres e não 6? E por que não sortear o código e checar no banco?',
+      'Se os IDs saem em sequência, como evitar que alguém adivinhe os próximos links?',
     ],
     project:
-      'Encurtador com analytics: códigos base62 a partir de faixas de IDs, redirect 302 e cliques registrados de forma assíncrona em uma fila.',
+      'Encurtador com analytics: códigos base62 a partir de faixas de IDs embaralhadas, redirect 302 e cliques registrados de forma assíncrona em uma fila.',
+    estimates: {
+      note: 'Tamanho do código em base 62: 62⁵ ≈ 916 mi, 62⁶ ≈ 56,8 bi, 62⁷ ≈ 3,52 tri. Sete caracteres cobrem os dois cenários.',
+      scenarios: [
+        {
+          id: 'caso',
+          label: '100 mi por mês',
+          rows: [
+            { label: 'Escritas', value: '~40/s' },
+            { label: 'Leitura : escrita', value: '100 : 1' },
+            { label: 'Leituras', value: '~4.000/s (pico ~40 mil)' },
+            { label: 'Retenção', value: '5 anos' },
+            { label: 'Registros', value: '6 bi' },
+            { label: 'Por registro', value: '500 bytes (URL + metadados)' },
+            { label: 'Armazenamento', value: '~3 TB' },
+          ],
+        },
+        {
+          id: 'xu',
+          label: '100 mi por dia',
+          source: 'System Design Interview, vol. 1 (Alex Xu), cap. 8',
+          rows: [
+            { label: 'Escritas', value: '~1.160/s' },
+            { label: 'Leitura : escrita', value: '10 : 1' },
+            { label: 'Leituras', value: '~11.600/s' },
+            { label: 'Retenção', value: '10 anos' },
+            { label: 'Registros', value: '365 bi' },
+            { label: 'Por registro', value: '100 bytes (só a URL)' },
+            { label: 'Armazenamento', value: '36,5 TB' },
+          ],
+        },
+      ],
+    },
   },
   {
     id: 'rate-limiter',

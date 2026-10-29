@@ -10,6 +10,25 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.5.0] - 2026-10-29
+
+### Adicionado
+
+- Versões de diagrama. A versão mais nova de cada caso é a padrão; as anteriores continuam acessíveis no painel do caso (**Ver v1**), no seletor de versão do modal e da guia nova e em `#/diagrama/<caso>/v<n>`. O painel mostra o que mudou na versão atual.
+- Diagrama v2 do caso 01 (Encurtador de URL), revisado depois da comparação com o capítulo 8 do *System Design Interview* (Alex Xu) e o vídeo do Renato Augusto:
+  - caminho de escrita desenhado (`POST /api/v1/urls`, gravação com `INSERT IF NOT EXISTS` e no cache);
+  - KGS só entrega faixas de um contador: o Key DB guarda a próxima faixa livre e o Cleanup não devolve mais chaves;
+  - códigos embaralhados por uma permutação com chave secreta antes do base 62;
+  - standby do Key DB com replicação síncrona;
+  - notas novas: links adivinháveis, failover que não pode voltar o contador, esquema e API, por que 7 caracteres; nota do 301 com nuance.
+- Filtro **Tudo / Leitura (clique) / Escrita (criar link)** na legenda dos diagramas que marcam o caminho de cada fluxo.
+- Roteiro v2 do podcast do caso 01, na ordem de uma entrevista (requisitos, contrato, desenho mínimo, o que quebra, aprofundamentos), com o capítulo novo "Os caminhos que não funcionam" e o diagrama sendo montado aos poucos. Ainda sem áudio: o painel mostra o roteiro, percorrido fala a fala, e avisa que o áudio está disponível na v1.
+- Estimativas no painel do caso 01, com troca entre o cenário do caso (100 mi por mês) e o do livro do Alex Xu (100 mi por dia), e duas perguntas novas de deep dive.
+
+### Corrigido
+
+- Rótulos das linhas apagadas agora também ficam apagados quando o diagrama destaca outra parte.
+
 ## [0.4.0] - 2026-10-29
 
 ### Adicionado

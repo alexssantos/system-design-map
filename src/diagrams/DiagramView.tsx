@@ -15,10 +15,11 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NoteCard } from '../components/kit/NoteCard';
+import { SegmentedControl } from '../ui-kit';
 import { KindIcon, kindColor, kindName } from './icons';
-import type { ComponentKind, Diagram, DiagramComponent, FlowKind, NoteKind } from './types';
+import type { ComponentKind, Diagram, DiagramComponent, FlowKind, FlowPath, NoteKind } from './types';
 import './diagram.css';
 
 const COL = 240;
@@ -32,7 +33,8 @@ type Side = 'top' | 'right' | 'bottom' | 'left';
 type CompNode = Node<{ comp: DiagramComponent }, 'comp'>;
 type NoteNode = Node<{ kind: NoteKind; title: string; text: string; index: number }, 'note'>;
 type ZoneNode = Node<{ label: string }, 'zone'>;
-type FlowEdgeT = Edge<{ kind: FlowKind | 'note'; label?: string; both?: boolean; delay: number }, 'flow'>;
+type EdgeState = 'focus' | 'dim' | 'hidden';
+type FlowEdgeT = Edge<{ kind: FlowKind | 'note'; label?: string; both?: boolean; path?: FlowPath; delay: number; state?: EdgeState }, 'flow'>;
 
 const sides: Side[] = ['top', 'right', 'bottom', 'left'];
 const pos: Record<Side, Position> = { top: Position.Top, right: Position.Right, bottom: Position.Bottom, left: Position.Left };
@@ -107,7 +109,7 @@ function FlowEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targ
       )}
       {data?.label && (
         <EdgeLabelRenderer>
-          <div className={`dg-edge-label dg-edge-label--${kind}`} style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
+          <div className={`dg-edge-label dg-edge-label--${kind}${data.state ? ` is-${data.state}` : ''}`} style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
             {data.label}
           </div>
         </EdgeLabelRenderer>
@@ -174,7 +176,7 @@ function build(d: Diagram) {
       target: f.to,
       sourceHandle: `s-${s}`,
       targetHandle: `t-${t}`,
-      data: { kind: f.kind, label: f.label, both: f.both, delay: i },
+      data: { kind: f.kind, label: f.label, both: f.both, path: f.path, delay: i },
     };
   });
 
@@ -202,10 +204,11 @@ const FLOW_LEGEND: { kind: FlowKind; label: string }[] = [
   { kind: 'replication', label: 'Replicação' },
 ];
 
-export function DiagramLegend({ diagram }: { diagram: Diagram }) {
+export function DiagramLegend({ diagram, children }: { diagram: Diagram; children?: React.ReactNode }) {
   const kinds = [...new Set(diagram.components.map((c) => c.kind))] as ComponentKind[];
   return (
     <div className="dg-legend">
+      {children}
       <div className="dg-legend__group">
         {FLOW_LEGEND.map((l) => (
           <span key={l.kind} className="dg-legend__item">
@@ -234,33 +237,55 @@ interface ViewProps {
   colorMode: 'dark' | 'light';
   /** Componentes e notas (`note-<i>`) em destaque; o resto fica apagado. Vazio = nada em destaque. */
   focus?: string[];
+  /** Componentes e notas ainda não apresentados: ficam quase invisíveis (o desenho vai sendo montado). */
+  hidden?: string[];
   /** A câmera acompanha o destaque. */
   follow?: boolean;
   /** Clique num componente ou nota. */
   onPick?: (id: string) => void;
 }
 
-const focusClass = (id: string, on: Set<string>) => (on.size === 0 ? '' : on.has(id) ? 'is-focus' : 'is-dim');
+type PathFilter = 'all' | 'read' | 'write';
 
-function Canvas({ diagram, colorMode, focus, follow, onPick }: ViewProps) {
+const focusClass = (id: string, on: Set<string>) => (on.size === 0 ? '' : on.has(id) ? 'is-focus' : 'is-dim');
+const inPath = (path: FlowPath | undefined, filter: PathFilter) => path === filter || path === 'both';
+
+function Canvas({ diagram, colorMode, focus, hidden, follow, onPick, filter }: ViewProps & { filter: PathFilter }) {
   const initial = useMemo(() => build(diagram), [diagram]);
   const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
   const { fitView } = useReactFlow();
-  const key = (focus ?? []).join(',');
+
+  // O destaque da conversa vence o filtro de caminho; o filtro acende o que o caminho toca.
+  const pathEdges = useMemo(
+    () => (filter === 'all' ? null : new Set(initial.edges.filter((e) => inPath(e.data?.path, filter)).map((e) => e.id))),
+    [initial, filter],
+  );
+  const lit = useMemo(() => {
+    if (focus?.length || !pathEdges) return new Set(focus);
+    return new Set(initial.edges.filter((e) => pathEdges.has(e.id)).flatMap((e) => [e.source, e.target]));
+  }, [initial, focus, pathEdges]);
+  const gone = useMemo(() => new Set(hidden), [hidden]);
+  const key = [...lit].join(',');
+  const hiddenKey = [...gone].join(',');
 
   useEffect(() => {
-    const on = new Set(focus);
-    setNodes((ns) => ns.map((n) => (n.type === 'zone' ? n : { ...n, className: focusClass(n.id, on) })));
+    setNodes((ns) =>
+      ns.map((n) => (n.type === 'zone' ? n : { ...n, className: gone.has(n.id) ? 'is-hidden' : focusClass(n.id, lit) })),
+    );
     if (!follow) return;
-    const ids = [...on].filter((id) => initial.nodes.some((n) => n.id === id));
+    const ids = [...lit].filter((id) => initial.nodes.some((n) => n.id === id));
     fitView(ids.length ? { nodes: ids.map((id) => ({ id })), duration: 900, padding: 0.4, maxZoom: 1.1 } : { duration: 900, padding: 0.08 });
-  }, [key, follow]);
+  }, [key, hiddenKey, follow]);
 
   const edges = useMemo(() => {
-    const on = new Set(focus);
-    if (on.size === 0) return initial.edges;
-    return initial.edges.map((e) => ({ ...e, className: on.has(e.source) && on.has(e.target) ? 'is-focus' : 'is-dim' }));
-  }, [initial, key]);
+    const mark = (e: FlowEdgeT, state: EdgeState) => ({ ...e, className: `is-${state}`, data: { ...e.data!, state } });
+    return initial.edges.map((e) => {
+      if (gone.has(e.source) || gone.has(e.target)) return mark(e, 'hidden');
+      if (pathEdges && !focus?.length) return mark(e, pathEdges.has(e.id) ? 'focus' : 'dim');
+      if (lit.size === 0) return e;
+      return mark(e, lit.has(e.source) && lit.has(e.target) ? 'focus' : 'dim');
+    });
+  }, [initial, key, hiddenKey, pathEdges]);
 
   return (
     <ReactFlow
@@ -284,16 +309,38 @@ function Canvas({ diagram, colorMode, focus, follow, onPick }: ViewProps) {
   );
 }
 
+/** Filtro que acende só o caminho do redirect ou só o da criação do link. */
+function PathPicker({ value, onChange }: { value: PathFilter; onChange: (v: PathFilter) => void }) {
+  return (
+    <div className="dg__paths">
+      <SegmentedControl
+        size="sm"
+        label="Caminho em destaque"
+        value={value}
+        onChange={(v) => onChange(v as PathFilter)}
+        options={[
+          { value: 'all', label: 'Tudo' },
+          { value: 'read', label: 'Leitura (clique)' },
+          { value: 'write', label: 'Escrita (criar link)' },
+        ]}
+      />
+    </div>
+  );
+}
+
 /** Canvas do diagrama de um caso. Componentes podem ser arrastados para estudar o desenho. */
 export function DiagramView(props: ViewProps) {
+  const [filter, setFilter] = useState<PathFilter>('all');
+  const hasPaths = props.diagram.flows.some((f) => f.path);
+  const focused = Boolean(props.focus?.length) || filter !== 'all';
   return (
-    <div className={`dg${props.focus?.length ? ' has-focus' : ''}${props.onPick ? ' is-pickable' : ''}`}>
+    <div className={`dg${focused ? ' has-focus' : ''}${props.onPick ? ' is-pickable' : ''}`}>
       <div className="dg__canvas">
         <ReactFlowProvider>
-          <Canvas key={props.diagram.caseId} {...props} />
+          <Canvas key={`${props.diagram.caseId}@${props.diagram.version ?? 1}`} {...props} filter={filter} />
         </ReactFlowProvider>
       </div>
-      <DiagramLegend diagram={props.diagram} />
+      <DiagramLegend diagram={props.diagram}>{hasPaths && <PathPicker value={filter} onChange={setFilter} />}</DiagramLegend>
     </div>
   );
 }

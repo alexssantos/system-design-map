@@ -57,9 +57,12 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))];
 }
 
-/** Rota por hash: #/diagrama/<caso> abre o diagrama em página própria (guia nova). */
+/** Rota por hash: #/diagrama/<caso>[/v<n>] abre o diagrama em página própria (guia nova). */
 function useHashRoute() {
-  const read = () => /^#\/diagrama\/([\w-]+)/.exec(window.location.hash)?.[1] ?? null;
+  const read = () => {
+    const m = /^#\/diagrama\/([\w-]+)(?:\/v(\d+))?/.exec(window.location.hash);
+    return m ? { caseId: m[1], version: m[2] ? Number(m[2]) : undefined } : null;
+  };
   const [route, setRoute] = useState(read);
   useEffect(() => {
     const on = () => setRoute(read());
@@ -70,7 +73,7 @@ function useHashRoute() {
 }
 
 function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) {
-  const [diagramFor, setDiagramFor] = useState<string | null>(null);
+  const [diagramFor, setDiagramFor] = useState<{ caseId: string; version?: number } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [levelFocus, setLevelFocus] = useState<LevelFocus>('senior');
@@ -301,7 +304,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
             edges={edges}
             nodeTypes={nodeTypes}
             onNodeClick={(_, n) => (n.type === 'topic' || n.type === 'case') && select(n.id)}
-            onNodeDoubleClick={(_, n) => n.type === 'case' && setDiagramFor(n.id)}
+            onNodeDoubleClick={(_, n) => n.type === 'case' && setDiagramFor({ caseId: n.id })}
             zoomOnDoubleClick={false}
             onNodeMouseEnter={(_, n) => (n.type === 'topic' || n.type === 'case') && setHovered(n.id)}
             onNodeMouseLeave={() => setHovered(null)}
@@ -322,10 +325,10 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           levelFocus={levelFocus}
           onSelect={select}
           onClose={() => setSelected(null)}
-          onOpenDiagram={setDiagramFor}
+          onOpenDiagram={(caseId, version) => setDiagramFor({ caseId, version })}
         />
       </div>
-      <DiagramModal caseId={diagramFor} theme={theme} onClose={() => setDiagramFor(null)} />
+      <DiagramModal caseId={diagramFor?.caseId ?? null} version={diagramFor?.version} theme={theme} onClose={() => setDiagramFor(null)} />
     </div>
   );
 }
@@ -333,7 +336,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
 export default function App() {
   const [theme, toggleTheme] = useTheme();
   const route = useHashRoute();
-  if (route) return <DiagramPage caseId={route} theme={theme} toggleTheme={toggleTheme} />;
+  if (route) return <DiagramPage key={`${route.caseId}@${route.version ?? ''}`} caseId={route.caseId} version={route.version} theme={theme} toggleTheme={toggleTheme} />;
   return (
     <ReactFlowProvider>
       <MapView theme={theme} toggleTheme={toggleTheme} />

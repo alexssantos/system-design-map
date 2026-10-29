@@ -48,7 +48,12 @@ export interface DiagramFlow {
   label?: string;
   /** Desenha nos dois sentidos (ex.: WebSocket). */
   both?: boolean;
+  /** Caminho a que o fluxo pertence, para o filtro leitura/escrita; sem caminho = fica fora dos dois. */
+  path?: FlowPath;
 }
+
+/** read = redirect (clique), write = criação do link, both = usado pelos dois caminhos. */
+export type FlowPath = 'read' | 'write' | 'both';
 
 export interface DiagramNote {
   kind: NoteKind;
@@ -68,6 +73,10 @@ export interface DiagramZone {
 
 export interface Diagram {
   caseId: string;
+  /** Versão do desenho; sem número = 1. A maior versão de cada caso é a padrão. */
+  version?: number;
+  /** O que mudou em relação à versão anterior. */
+  changes?: string[];
   /** Uma frase sobre a ideia central do desenho. */
   headline: string;
   components: DiagramComponent[];

@@ -1,5 +1,6 @@
 .dg { display: flex; flex-direction: column; height: 100%; }
 .dg__canvas { flex: 1; min-height: 0; }
+.dg__paths { display: flex; align-items: center; }
 .dg .react-flow { --xy-background-color: var(--color-bg); --xy-background-pattern-color: var(--color-line-strong); }
 .dg .react-flow__controls { box-shadow: var(--shadow-pop); border-radius: var(--radius-sm); overflow: hidden; }
 .dg .react-flow__controls-button { background: var(--color-surface); border-color: var(--color-line); fill: var(--color-text); }
@@ -93,6 +94,11 @@
 .dg .react-flow__node, .dg .react-flow__edge { transition: opacity var(--motion-duration-slow) var(--motion-ease-out), filter var(--motion-duration-slow); }
 .dg .react-flow__node.is-dim { opacity: 0.28; filter: saturate(0.3); }
 .dg .react-flow__edge.is-dim { opacity: 0.12; }
+.dg .react-flow__node.is-hidden { opacity: 0.05; filter: saturate(0); pointer-events: none; }
+.dg .react-flow__edge.is-hidden { opacity: 0; }
+.dg-edge-label { transition: opacity var(--motion-duration-slow) var(--motion-ease-out); }
+.dg-edge-label.is-dim { opacity: 0.18; }
+.dg-edge-label.is-hidden { opacity: 0; }
 .dg .react-flow__node.is-focus .dg-comp {
   box-shadow: inset 0 0 0 2px var(--kind), 0 0 0 6px color-mix(in srgb, var(--kind) 18%, transparent), 0 0 36px color-mix(in srgb, var(--kind) 45%, transparent);
   animation: dg-glow 2.4s ease-in-out infinite;

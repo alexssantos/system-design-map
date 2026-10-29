@@ -27,7 +27,11 @@ export interface Chapter {
 
 export interface PodcastScript {
   caseId: string;
+  /** Versão do diagrama a que o roteiro se refere; sem número = 1. */
+  version?: number;
   title: string;
+  /** Monta o diagrama aos poucos: o que ainda não apareceu em nenhum foco fica escondido. */
+  reveal?: boolean;
   chapters: Chapter[];
 }
 

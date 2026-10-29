@@ -1,14 +1,16 @@
 import { caseById, getItem, groupById, relatedOf, topicById, topicsByCase } from '../data/graph';
-import type { Level } from '../data/types';
-import { diagramByCase } from '../diagrams/data';
-import { Badge, Button, Card, Chip, Icon, IconButton, SectionLabel } from '../ui-kit';
+import { useState } from 'react';
+import type { CaseEstimates, Level } from '../data/types';
+import { diagramVersions, versionOf } from '../diagrams/data';
+import { audioVersions } from '../podcasts';
+import { Badge, Button, Card, Chip, Icon, IconButton, SectionLabel, SegmentedControl } from '../ui-kit';
 
 interface Props {
   id: string | null;
   levelFocus: Level | 'all';
   onSelect: (id: string) => void;
   onClose: () => void;
-  onOpenDiagram: (caseId: string) => void;
+  onOpenDiagram: (caseId: string, version?: number) => void;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -31,6 +33,69 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <SectionLabel align="start">{title}</SectionLabel>
       {children}
     </section>
+  );
+}
+
+/** Botão do diagrama padrão (a versão mais nova), o que mudou nela e as versões anteriores. */
+function DiagramVersions({ caseId, onOpen }: { caseId: string; onOpen: (caseId: string, version?: number) => void }) {
+  const list = diagramVersions.get(caseId);
+  if (!list) return null;
+  const [latest, ...older] = list;
+  const withAudio = new Set(audioVersions(caseId));
+  return (
+    <>
+      <Button variant="primary" icon="grid" block onClick={() => onOpen(caseId)}>
+        Ver diagrama de arquitetura{older.length > 0 && ` (v${versionOf(latest)})`}
+      </Button>
+      {older.length > 0 && (
+        <Section title={`O que mudou na v${versionOf(latest)}`}>
+          <ul>
+            {latest.changes?.map((ch) => (
+              <li key={ch}>{ch}</li>
+            ))}
+          </ul>
+          <div className="versions">
+            {older.map((d) => (
+              <Button key={versionOf(d)} variant="light" size="sm" icon="history" onClick={() => onOpen(caseId, versionOf(d))}>
+                Ver v{versionOf(d)}
+                {withAudio.has(versionOf(d)) && ' · com áudio'}
+              </Button>
+            ))}
+          </div>
+        </Section>
+      )}
+    </>
+  );
+}
+
+/** Contas de capacidade do caso, com troca entre cenários. */
+function Estimates({ estimates }: { estimates: CaseEstimates }) {
+  const [id, setId] = useState(estimates.scenarios[0].id);
+  const s = estimates.scenarios.find((x) => x.id === id) ?? estimates.scenarios[0];
+  return (
+    <Section title="Estimativas">
+      {estimates.scenarios.length > 1 && (
+        <SegmentedControl
+          size="sm"
+          label="Cenário"
+          value={s.id}
+          onChange={setId}
+          options={estimates.scenarios.map((x) => ({ value: x.id, label: x.label }))}
+        />
+      )}
+      <table className="estimates">
+        <tbody>
+          {s.rows.map((r) => (
+            <tr key={r.label}>
+              <th scope="row">{r.label}</th>
+              <td className="tl-num">{r.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {s.source && <p className="muted estimates__source">Cenário de {s.source}.</p>}
+      {estimates.note && <p className="muted">{estimates.note}</p>}
+    </Section>
   );
 }
 
@@ -81,11 +146,8 @@ export function DetailPanel({ id, levelFocus, onSelect, onClose, onOpenDiagram }
         <h2>{item.title}</h2>
         <p className="muted">{item.examples}</p>
         <p>{item.summary}</p>
-        {diagramByCase.has(item.id) && (
-          <Button variant="primary" icon="grid" block onClick={() => onOpenDiagram(item.id)}>
-            Ver diagrama de arquitetura
-          </Button>
-        )}
+        <DiagramVersions caseId={item.id} onOpen={onOpenDiagram} />
+        {item.estimates && <Estimates estimates={item.estimates} />}
         <Section title="Perguntas de deep dive">
           <ul>
             {item.deepDive.map((q) => (

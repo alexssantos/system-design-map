@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { diagramByCase } from '../diagrams/data';
-import { episodes, firstTurnWith, spoken, turnAt } from '.';
+import { diagramFor, versionOf } from '../diagrams/data';
+import { audioVersions, episodeFor, episodes, firstTurnWith, revealedAt, spoken, turnAt } from '.';
 
 describe('episódios do podcast', () => {
   for (const ep of episodes) {
-    describe(ep.script.caseId, () => {
-      const d = diagramByCase.get(ep.script.caseId);
+    const version = ep.script.version ?? 1;
+    describe(`${ep.script.caseId} v${version}`, () => {
+      const d = diagramFor(ep.script.caseId, version);
 
-      it('o caso tem diagrama', () => {
+      it('o caso tem diagrama nessa versão', () => {
         expect(d).toBeDefined();
+        expect(versionOf(d!)).toBe(version);
       });
 
       it('todo foco aponta para um componente ou nota do diagrama', () => {
@@ -20,13 +22,27 @@ describe('episódios do podcast', () => {
         for (const c of d!.components) expect(firstTurnWith(ep, c.id), c.id).toBeGreaterThanOrEqual(0);
       });
 
+      it('cada capítulo começa na fala certa', () => {
+        ep.chapterFirst.forEach((i, c) => expect(ep.turns[i].chapter).toBe(c));
+      });
+
+      if (ep.script.reveal) {
+        it('ao montar o diagrama, a primeira fala já mostra algo e o fim mostra tudo', () => {
+          expect(revealedAt(ep, 0)?.size).toBeGreaterThan(0);
+          expect(revealedAt(ep, ep.turns.length - 1)).toBeNull();
+        });
+      }
+
+      if (!ep.timing) return;
+      const timing = ep.timing;
+
       it('os tempos cobrem todas as falas, em ordem', () => {
-        expect(ep.timing.turns.length).toBe(ep.turns.length);
+        expect(timing.turns.length).toBe(ep.turns.length);
         ep.turns.forEach((t, i) => {
           expect(t.end).toBeGreaterThan(t.start);
           if (i > 0) expect(t.start).toBeGreaterThanOrEqual(ep.turns[i - 1].end);
         });
-        expect(ep.turns.at(-1)!.end).toBeCloseTo(ep.timing.duration, 1);
+        expect(ep.turns.at(-1)!.end).toBeCloseTo(timing.duration, 1);
       });
 
       it('as duas vozes participam', () => {
@@ -41,6 +57,11 @@ describe('episódios do podcast', () => {
       });
     });
   }
+
+  it('o encurtador tem roteiro v2 sem áudio e áudio só na v1', () => {
+    expect(episodeFor('url-shortener', 2)?.timing).toBeUndefined();
+    expect(audioVersions('url-shortener')).toEqual([1]);
+  });
 
   it('tira as tags de direção da transcrição', () => {
     expect(spoken('[warmly] Olá. [short pause] Tudo bem?')).toBe('Olá. Tudo bem?');
