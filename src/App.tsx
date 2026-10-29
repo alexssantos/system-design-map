@@ -170,7 +170,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           target: e.target,
           animated: active && e.kind === 'applied',
           style: {
-            stroke: e.kind === 'applied' ? color : 'var(--muted)',
+            stroke: e.kind === 'applied' ? color : 'var(--color-text-2)',
             strokeWidth: active ? 2 : 1,
             strokeDasharray: e.kind === 'related' ? '6 4' : undefined,
             opacity: active ? 0.9 : 0.25,
