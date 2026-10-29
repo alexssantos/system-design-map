@@ -10,6 +10,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.2.1] - 2026-10-29
+
+### Corrigido
+
+- As linhas tracejadas entre tópicos relacionados (por exemplo, Escala horizontal com Load balancer e Autoscaling) voltaram a aparecer. Elas usavam uma cor do estilo antigo que deixou de existir com o Transly UI Kit.
+
+### Adicionado
+
+- Teste que falha quando o app usa uma variável CSS que não está definida.
+
 ## [0.2.0] - 2026-10-29
 
 ### Adicionado
@@ -41,6 +51,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/alexssantos/system-design-map/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alexssantos/system-design-map/releases/tag/v0.1.0
