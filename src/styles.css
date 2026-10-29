@@ -48,15 +48,70 @@ body {
   font-size: var(--font-size-caption);
 }
 
-.brand__mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  background:
-    radial-gradient(circle at 30% 30%, var(--color-accent) 0 5px, transparent 6px),
-    radial-gradient(circle at 72% 40%, var(--color-info) 0 4px, transparent 5px),
-    radial-gradient(circle at 45% 75%, var(--color-voice) 0 4px, transparent 5px),
-    var(--color-surface-2);
+.brand__avatar {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  border-radius: 50%;
+  outline-offset: 3px;
+}
+
+/* Anel que pulsa devagar em volta da foto, na cor de destaque do kit. */
+.brand__avatar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+  animation: brand-pulse 2.8s var(--motion-ease-out) infinite;
+}
+
+.brand__avatar .tl-avatar {
+  animation: brand-breathe 2.8s ease-in-out infinite;
+  transition: box-shadow 0.2s ease;
+}
+
+.brand__avatar:hover .tl-avatar img,
+.brand__avatar:focus-visible .tl-avatar img {
+  filter: none;
+}
+
+.brand__avatar:hover .tl-avatar {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 3px var(--color-accent);
+}
+
+@keyframes brand-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}
+
+@keyframes brand-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__avatar::after,
+  .brand__avatar .tl-avatar {
+    animation: none;
+  }
+}
+
+.toolbar__downloads {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .toolbar__search {
@@ -421,4 +476,15 @@ body {
     border-left: 0;
     border-top: 1px solid var(--color-line);
   }
+}
+
+/* Wrapper só para achar o canvas do caso na hora de exportar; não muda o layout. */
+.case-body {
+  display: contents;
+}
+
+.diagram-download {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }

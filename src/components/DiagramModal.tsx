@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import type { Theme } from '../theme';
 import { caseById } from '../data/graph';
 import { DiagramView } from '../diagrams/DiagramView';
 import { diagramByCase } from '../diagrams/data';
+import { exportFlowImage, runExport, type ImageFormat } from '../export/flowImage';
+import { FormatPicker } from './FormatPicker';
 import { Badge, Button, IconButton } from '../ui-kit';
 import { CasePodcast, hasPodcast } from './CasePodcast';
 import { Modal } from './kit/Modal';
@@ -11,9 +13,33 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const hrefOf = (caseId: string) => `${window.location.pathname}#/diagrama/${caseId}`;
 
 /** Diagrama sozinho ou, quando o caso tem episódio e o painel está aberto, com o podcast ao lado. */
-function CaseBody({ caseId, theme, listen }: { caseId: string; theme: Theme; listen: boolean }) {
+function CaseBody({ caseId, theme, listen, bodyRef }: { caseId: string; theme: Theme; listen: boolean; bodyRef: RefObject<HTMLDivElement | null> }) {
   const diagram = diagramByCase.get(caseId)!;
-  return listen && hasPodcast(caseId) ? <CasePodcast diagram={diagram} colorMode={theme} /> : <DiagramView diagram={diagram} colorMode={theme} />;
+  return (
+    <div className="case-body" ref={bodyRef}>
+      {listen && hasPodcast(caseId) ? <CasePodcast diagram={diagram} colorMode={theme} /> : <DiagramView diagram={diagram} colorMode={theme} />}
+    </div>
+  );
+}
+
+/** Baixa o diagrama do caso inteiro do jeito que ele aparece agora (tema e destaques), em PNG ou SVG animado. */
+function DownloadDiagram({ caseId, bodyRef }: { caseId: string; bodyRef: RefObject<HTMLDivElement | null> }) {
+  const [busy, setBusy] = useState(false);
+  const [format, setFormat] = useState<ImageFormat>('png');
+  const c = caseById.get(caseId)!;
+  return (
+    <div className="diagram-download">
+      <FormatPicker value={format} onChange={setFormat} />
+      <IconButton
+        icon="download"
+        label={busy ? 'Gerando imagem…' : `Baixar diagrama (${format === 'svg' ? 'SVG animado' : 'PNG'})`}
+        disabled={busy}
+        onClick={() =>
+          bodyRef.current && runExport(setBusy, () => exportFlowImage(bodyRef.current!, { fileName: `caso ${pad(c.number)} ${c.title}`, format }))
+        }
+      />
+    </div>
+  );
 }
 
 function ListenToggle({ caseId, listen, setListen }: { caseId: string; listen: boolean; setListen: (v: boolean) => void }) {
@@ -40,6 +66,7 @@ function Title({ caseId }: { caseId: string }) {
 export function DiagramModal({ caseId, theme, onClose }: { caseId: string | null; theme: Theme; onClose: () => void }) {
   const diagram = caseId ? diagramByCase.get(caseId) : undefined;
   const [listen, setListen] = useState(true);
+  const bodyRef = useRef<HTMLDivElement>(null);
   return (
     <Modal
       open={Boolean(diagram)}
@@ -50,13 +77,14 @@ export function DiagramModal({ caseId, theme, onClose }: { caseId: string | null
         caseId && (
           <>
             <ListenToggle caseId={caseId} listen={listen} setListen={setListen} />
+            <DownloadDiagram caseId={caseId} bodyRef={bodyRef} />
             <IconButton icon="external" label="Abrir em nova guia" onClick={() => window.open(hrefOf(caseId), '_blank')} />
             <IconButton icon="close" label="Fechar" keys={['Esc']} onClick={onClose} />
           </>
         )
       }
     >
-      {diagram && caseId && <CaseBody caseId={caseId} theme={theme} listen={listen} />}
+      {diagram && caseId && <CaseBody caseId={caseId} theme={theme} listen={listen} bodyRef={bodyRef} />}
     </Modal>
   );
 }
@@ -65,6 +93,7 @@ export function DiagramModal({ caseId, theme, onClose }: { caseId: string | null
 export function DiagramPage({ caseId, theme, toggleTheme }: { caseId: string; theme: Theme; toggleTheme: () => void }) {
   const diagram = diagramByCase.get(caseId);
   const [listen, setListen] = useState(true);
+  const bodyRef = useRef<HTMLDivElement>(null);
   if (!diagram) {
     return (
       <div className="page-missing">
@@ -86,6 +115,7 @@ export function DiagramPage({ caseId, theme, toggleTheme }: { caseId: string; th
         </div>
         <div className="tl-modal__actions">
           <ListenToggle caseId={caseId} listen={listen} setListen={setListen} />
+          <DownloadDiagram caseId={caseId} bodyRef={bodyRef} />
           <Button variant="dark" size="sm" icon="chevron-left" onClick={() => (window.location.hash = '')}>
             Mapa
           </Button>
@@ -93,7 +123,7 @@ export function DiagramPage({ caseId, theme, toggleTheme }: { caseId: string; th
         </div>
       </header>
       <div className="diagram-page__body">
-        <CaseBody caseId={caseId} theme={theme} listen={listen} />
+        <CaseBody caseId={caseId} theme={theme} listen={listen} bodyRef={bodyRef} />
       </div>
     </div>
   );
