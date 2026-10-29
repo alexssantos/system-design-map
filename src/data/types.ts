@@ -41,4 +41,20 @@ export interface StudyCase {
   summary: string;
   deepDive: string[];
   project: string;
+  /** Contas de capacidade em um ou mais cenários de entrevista. */
+  estimates?: CaseEstimates;
+}
+
+export interface EstimateScenario {
+  id: string;
+  label: string;
+  /** De onde vem o cenário, ex.: um livro. */
+  source?: string;
+  rows: { label: string; value: string }[];
+}
+
+export interface CaseEstimates {
+  scenarios: EstimateScenario[];
+  /** Uma linha que vale para todos os cenários. */
+  note?: string;
 }

@@ -5,6 +5,7 @@ import type {
   DiagramFlow,
   DiagramNote,
   FlowKind,
+  FlowPath,
   NoteKind,
 } from './types';
 
@@ -25,6 +26,9 @@ const f = (from: string, to: string, kind: FlowKind, label?: string, both?: bool
   label,
   both,
 });
+
+/** Fluxo marcado com o caminho (leitura, escrita ou os dois) para o filtro do diagrama. */
+const on = (path: FlowPath, flow: DiagramFlow): DiagramFlow => ({ ...flow, path });
 
 const n = (kind: NoteKind, title: string, text: string, col: number, row: number, target?: string): DiagramNote => ({
   kind,
@@ -77,6 +81,70 @@ export const diagrams: Diagram[] = [
       n('alert', '301 vs 302', '301 fica no cache do navegador e alivia o servidor, mas você perde a contagem de cliques. Para analytics use 302.', 0, 2.6, 'lb1'),
       n('interview', 'Diga em voz alta', 'Razão 100:1 leitura/escrita justifica cache + réplicas. Contagem de cliques vai para fila: o redirect não espera o analytics.', 5.5, 1.6, 'clicks'),
       n('alert', 'Link viral = hot key', '50 mil req/s numa chave: cache local no servidor + request coalescing evitam stampede no Redis.', 1, 3.15, 'cache'),
+    ],
+    zones: [
+      { label: 'Geração de chaves', from: [3.2, -0.2], to: [5.4, 0.75] },
+      { label: 'Armazenamento de links', from: [3.2, 0.75], to: [5.4, 2.0] },
+    ],
+  },
+
+  // ─────────────── 01 Encurtador de URL · v2 ───────────────
+  // Revisão depois da comparação com o capítulo 8 do System Design Interview (Alex Xu):
+  // faixas de contador sem estoque de chaves, códigos embaralhados e caminho de escrita desenhado.
+  {
+    caseId: 'url-shortener',
+    version: 2,
+    headline: 'Leitura 100:1. O redirect passa só por cache e KV; a criação usa um ID da faixa local, embaralhado, gravado com IF NOT EXISTS.',
+    changes: [
+      'Caminho de escrita desenhado (POST /api/v1/urls) e filtro leitura/escrita no diagrama.',
+      'KGS só entrega faixas de um contador: o Key DB guarda a próxima faixa livre e o Cleanup não devolve chaves.',
+      'Códigos embaralhados (permutação com chave secreta antes do base 62) para não serem adivinháveis.',
+      'Standby com replicação síncrona: um failover não pode reentregar uma faixa já usada.',
+      'Notas novas: esquema e API, por que 7 caracteres e o 301 com nuance.',
+    ],
+    components: [
+      c('creator', 'client', 'Criador do link', 0, 0.1, 'painel ou API pública'),
+      c('web', 'client', 'Navegadores', 0, 1.05),
+      c('app', 'mobile', 'Apps', 0, 1.95),
+      c('lb1', 'lb', 'Load balancer', 1, 1.1),
+      c('api', 'service', 'API servers', 2, 1.1, 'ID → permutação → base62', true),
+      c('kgs', 'coordinator', 'Key Generation Service', 2, 0, 'entrega faixas de IDs'),
+      c('keydb', 'db', 'Key DB', 3.4, 0, 'próxima faixa livre'),
+      c('standby', 'replica', 'Standby', 4.5, 0, 'replicação síncrona'),
+      c('cache', 'cache', 'Cache de links', 2, 2.3, 'Redis, LRU'),
+      c('db', 'db', 'Links DB', 3.4, 1.1, 'KV particionado'),
+      c('r1', 'replica', 'Réplica', 4.5, 0.85),
+      c('r2', 'replica', 'Réplica', 4.5, 1.55),
+      c('clicks', 'queue', 'Fila de cliques', 3.4, 2.3, 'Kafka'),
+      c('agg', 'worker', 'Analytics', 4.5, 2.3, 'agregação'),
+      c('cleanup', 'scheduler', 'Cleanup service', 5.6, 0.55, 'expiração'),
+    ],
+    flows: [
+      on('write', f('creator', 'lb1', 'sync', 'POST /api/v1/urls')),
+      on('read', f('web', 'lb1', 'sync', 'GET /:code')),
+      on('read', f('app', 'lb1', 'sync')),
+      on('both', f('lb1', 'api', 'sync')),
+      on('write', f('api', 'kgs', 'sync', 'faixa acabou: pede 1.000 IDs')),
+      on('write', f('kgs', 'keydb', 'sync', 'avança o contador')),
+      f('keydb', 'standby', 'replication', 'síncrona'),
+      on('both', f('api', 'cache', 'read', '1. lookup · grava ao criar')),
+      on('both', f('api', 'db', 'sync', '2. busca no miss · grava')),
+      f('db', 'r1', 'replication'),
+      f('db', 'r2', 'replication'),
+      on('read', f('db', 'cache', 'async', 'preenche')),
+      on('read', f('api', 'clicks', 'async', 'evento de clique')),
+      on('read', f('clicks', 'agg', 'async')),
+      f('cleanup', 'db', 'async', 'remove expirados'),
+    ],
+    notes: [
+      n('impl', 'Faixas de IDs', 'Cada servidor pega uma faixa de 1.000 IDs no KGS e gasta localmente. Se cair, perde só a faixa: 7 chars base62 ≈ 3,5 tri de combinações.', 0.1, -0.95, 'kgs'),
+      n('alert', '301 vs 302', '301 fica no cache de cada navegador: só poupa visitas repetidas do mesmo usuário e você perde a contagem. Para analytics use 302.', 0, 2.75, 'lb1'),
+      n('interview', 'Diga em voz alta', 'Razão 100:1 leitura/escrita justifica cache + réplicas. Contagem de cliques vai para fila: o redirect não espera o analytics.', 5.5, 1.6, 'clicks'),
+      n('alert', 'Link viral = hot key', '50 mil req/s numa chave: cache local no servidor + request coalescing evitam stampede no Redis.', 1, 3.15, 'cache'),
+      n('alert', 'Links adivinháveis', 'IDs em sequência viram códigos em sequência (2TX, 2TY…). Passe o ID por uma permutação com chave secreta (Feistel) antes do base 62. Hashids só ofusca.', 1.2, -0.95, 'api'),
+      n('alert', 'Failover não volta o contador', 'Standby atrasado reentrega uma faixa já usada e o INSERT sobrescreve links. Replicação síncrona, ou pule algumas faixas ao promover.', 4.4, -0.95, 'standby'),
+      n('impl', 'Esquema e API', 'links(code PK, long_url, owner_id, created_at, expires_at). POST /api/v1/urls → 201 com o código; GET /{code} → 302 + Location.', 5.6, 2.6, 'db'),
+      n('interview', 'Por que 7 caracteres?', '62⁶ ≈ 56,8 bi não cobre 365 bi (100 mi/dia × 10 anos); 62⁷ ≈ 3,52 tri cobre. Aleatório + checar custa ~10% de retry no fim, não um loop infinito.', 5.6, -0.95, 'keydb'),
     ],
     zones: [
       { label: 'Geração de chaves', from: [3.2, -0.2], to: [5.4, 0.75] },
@@ -584,4 +652,16 @@ export const diagrams: Diagram[] = [
   },
 ];
 
-export const diagramByCase = new Map(diagrams.map((d) => [d.caseId, d]));
+export const versionOf = (d: Diagram) => d.version ?? 1;
+
+/** Todas as versões de cada caso, da mais nova para a mais antiga. */
+export const diagramVersions = new Map<string, Diagram[]>();
+for (const d of diagrams) diagramVersions.set(d.caseId, [...(diagramVersions.get(d.caseId) ?? []), d]);
+for (const list of diagramVersions.values()) list.sort((a, b) => versionOf(b) - versionOf(a));
+
+/** Versão padrão (a mais nova) de cada caso. */
+export const diagramByCase = new Map([...diagramVersions].map(([id, list]) => [id, list[0]]));
+
+/** Diagrama do caso numa versão; sem versão (ou versão inexistente) = a padrão. */
+export const diagramFor = (caseId: string, version?: number) =>
+  diagramVersions.get(caseId)?.find((d) => versionOf(d) === version) ?? diagramByCase.get(caseId);

@@ -35,3 +35,7 @@
   .pc__tx { flex: none; overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) { .pc__host.is-speaking .tl-avatar { animation: none; } }
+
+.pc__noaudio { margin: 0 var(--space-4) var(--space-3); }
+.pc__player--script { justify-content: space-between; padding-right: 8px; }
+.pc__step { font-size: 13px; color: var(--color-text-2); }
