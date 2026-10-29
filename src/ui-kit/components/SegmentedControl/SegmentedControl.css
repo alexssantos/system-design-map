@@ -1,0 +1,8 @@
+.tl-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-line); }
+.tl-seg__opt { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; border-radius: var(--radius-pill); color: var(--color-text-2); font-weight: var(--font-weight-medium); white-space: nowrap; transition: color var(--motion-duration-base) var(--motion-ease-out); }
+.tl-seg--sm .tl-seg__opt { height: 26px; padding: 0 12px; font-size: var(--font-size-small); }
+.tl-seg--md .tl-seg__opt { height: 34px; padding: 0 16px; }
+.tl-seg__opt > :not(.tl-seg__thumb) { position: relative; z-index: 1; }
+.tl-seg__opt:hover { color: var(--color-text); }
+.tl-seg__opt.is-on { color: var(--color-on-inverse); }
+.tl-seg__thumb { position: absolute; inset: 0; border-radius: inherit; background: var(--color-surface-inverse); }

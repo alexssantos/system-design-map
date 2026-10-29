@@ -1,0 +1,7 @@
+.tl-card { position: relative; border-radius: var(--radius-lg); }
+.tl-card--surface { background: var(--color-surface); box-shadow: var(--shadow-card); }
+.tl-card--sunken { background: var(--color-bg-sunken); }
+.tl-card--outline { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
+.tl-card--accent { background: var(--color-accent); color: var(--color-on-accent); }
+.tl-card--p-none { padding: 0; } .tl-card--p-sm { padding: var(--space-3); } .tl-card--p-md { padding: var(--space-4); } .tl-card--p-lg { padding: var(--space-6); }
+.tl-card.is-interactive { cursor: pointer; }

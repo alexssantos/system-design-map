@@ -1,0 +1,37 @@
+.tl-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  border: 0; border-radius: var(--radius-pill); padding: 0 var(--space-5); overflow: hidden; isolation: isolate;
+  font-weight: var(--font-weight-semibold); white-space: nowrap; user-select: none;
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast), box-shadow var(--motion-duration-base) var(--motion-ease-out), opacity var(--motion-duration-fast);
+}
+.tl-btn--sm { height: var(--size-control-sm); padding: 0 var(--space-4); font-size: var(--font-size-small); }
+.tl-btn--md { height: var(--size-control); }
+.tl-btn--lg { height: 48px; padding: 0 var(--space-6); font-size: 15px; }
+.tl-btn--caps .tl-btn__label { font-size: var(--font-size-caption); letter-spacing: var(--font-tracking-caps); text-transform: uppercase; }
+.tl-btn--block { width: 100%; }
+.tl-btn__icon { display: inline-flex; margin-left: calc(var(--space-1) * -1); }
+.tl-btn__icon-r { margin-right: calc(var(--space-1) * -1); }
+
+.tl-btn--primary { background: var(--color-accent); color: var(--color-on-accent); }
+.tl-btn--primary:hover:not(:disabled) { background: var(--color-accent-strong); box-shadow: var(--shadow-glow); }
+.tl-btn--light { background: var(--color-surface-inverse); color: var(--color-on-inverse); }
+.tl-btn--light:hover:not(:disabled) { filter: brightness(1.06); }
+.tl-btn--dark { background: var(--color-surface-2); color: var(--color-text); }
+.tl-btn--dark:hover:not(:disabled) { background: var(--color-surface-3); }
+.tl-btn--ghost { background: transparent; color: var(--color-text-2); }
+.tl-btn--ghost:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-text); }
+.tl-btn--danger { background: color-mix(in srgb, var(--color-danger) 16%, transparent); color: var(--color-danger); }
+.tl-btn--danger:hover:not(:disabled) { background: var(--color-danger); color: var(--color-on-accent); }
+.tl-btn:disabled { opacity: .42; cursor: not-allowed; }
+.tl-btn.is-loading { cursor: progress; opacity: 1; }
+
+/* Brilho que varre o CTA */
+.tl-btn--shine::after {
+  content: ''; position: absolute; inset: -20% auto -20% 0; width: 40%; z-index: -1;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: tl-btn-shine 4s var(--motion-ease-in-out) 1.2s infinite;
+}
+.tl-btn--shine:not(.tl-btn--primary)::after { background: linear-gradient(100deg, transparent, rgba(255,255,255,.18), transparent); }
+@keyframes tl-btn-shine { 0% { transform: translateX(-160%) skewX(-18deg); } 28%, 100% { transform: translateX(360%) skewX(-18deg); } }
+@media (prefers-reduced-motion: reduce) { .tl-btn--shine::after { display: none; } }

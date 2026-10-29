@@ -1,0 +1,13 @@
+.tl-badge { --tone: var(--color-text-2); display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: var(--radius-pill); font-size: var(--font-size-small); font-weight: var(--font-weight-semibold); white-space: nowrap; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent); }
+.tl-badge--accent { --tone: var(--color-accent); }
+[data-theme='light'] .tl-badge--accent:not(.is-solid) { color: var(--palette-lime-800); }
+.tl-badge--info { --tone: var(--color-info); }
+.tl-badge--voice { --tone: var(--color-voice); }
+.tl-badge--success { --tone: var(--color-success); }
+.tl-badge--danger { --tone: var(--color-danger); }
+.tl-badge--warning { --tone: var(--color-warning); }
+.tl-badge.is-solid { background: var(--tone); color: var(--color-on-accent); }
+.tl-badge--neutral.is-solid { background: var(--color-surface-inverse); color: var(--color-on-inverse); }
+.tl-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.tl-badge__dot.is-pulse { animation: tl-badge-pulse 1.4s var(--motion-ease-out) infinite; }
+@keyframes tl-badge-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 60%, transparent); } 100% { box-shadow: 0 0 0 7px transparent; } }

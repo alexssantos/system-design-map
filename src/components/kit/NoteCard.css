@@ -1,0 +1,14 @@
+.tl-note { --tone: var(--color-info); position: relative; width: 100%; padding: var(--space-3); border-radius: var(--radius-md); background: color-mix(in srgb, var(--tone) 11%, var(--color-surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 32%, transparent), var(--shadow-card); overflow: hidden; }
+.tl-note--alert { --tone: var(--color-danger); }
+.tl-note--interview { --tone: var(--color-accent); }
+[data-theme='light'] .tl-note--interview { --tone: var(--palette-lime-600); }
+.tl-note__head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: 6px; }
+.tl-note__icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--tone); background: color-mix(in srgb, var(--tone) 20%, transparent); }
+[data-theme='light'] .tl-note--interview .tl-note__icon, [data-theme='light'] .tl-note--interview .tl-note__kind { color: var(--palette-lime-800); }
+.tl-note__kind { color: var(--tone); }
+.tl-note__title { display: block; font-size: var(--font-size-small); line-height: var(--font-leading-tight); margin-bottom: 4px; }
+.tl-note__text { margin: 0; font-size: 12px; line-height: 1.4; color: var(--color-text-2); }
+.tl-note--alert .tl-note__icon { animation: tl-note-pulse 1.8s var(--motion-ease-out) infinite; }
+@keyframes tl-note-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tone) 55%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
+.tl-note--interview::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--tone) 22%, transparent) 50%, transparent 65%); transform: translateX(-100%); animation: tl-note-shine 4.5s var(--motion-ease-in-out) infinite; pointer-events: none; }
+@keyframes tl-note-shine { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }

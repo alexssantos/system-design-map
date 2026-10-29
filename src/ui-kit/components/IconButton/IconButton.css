@@ -1,0 +1,23 @@
+.tl-iconbtn {
+  position: relative; display: inline-grid; place-items: center; flex: none; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--color-text-2);
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast), box-shadow var(--motion-duration-base) var(--motion-ease-out);
+}
+.tl-iconbtn--sm { width: var(--size-control-sm); height: var(--size-control-sm); }
+.tl-iconbtn--md { width: var(--size-control); height: var(--size-control); }
+.tl-iconbtn--lg { width: 52px; height: 52px; }
+.tl-iconbtn__glyph { display: grid; place-items: center; grid-area: 1 / 1; }
+.tl-iconbtn:hover:not(:disabled) { color: var(--color-text); background: var(--color-surface-2); }
+.tl-iconbtn--soft { background: var(--color-surface-2); color: var(--color-text); }
+.tl-iconbtn--soft:hover:not(:disabled) { background: var(--color-surface-3); }
+.tl-iconbtn--solid { background: var(--color-surface-inverse); color: var(--color-on-inverse); }
+.tl-iconbtn--solid:hover:not(:disabled) { background: var(--color-surface-inverse); filter: brightness(1.08); color: var(--color-on-inverse); }
+.tl-iconbtn--accent { background: var(--color-accent); color: var(--color-on-accent); }
+.tl-iconbtn--accent:hover:not(:disabled) { background: var(--color-accent-strong); color: var(--color-on-accent); box-shadow: var(--shadow-glow); }
+.tl-iconbtn--outline { box-shadow: inset 0 0 0 1.5px var(--color-line-strong); color: var(--color-text); }
+.tl-iconbtn.is-active { background: var(--color-accent-soft); color: var(--color-accent); }
+[data-theme='light'] .tl-iconbtn.is-active { color: var(--palette-lime-800); }
+.tl-iconbtn.is-feedback { color: var(--color-success); }
+.tl-iconbtn:disabled { opacity: .38; cursor: not-allowed; }
+.tl-iconbtn__dot { position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); box-shadow: 0 0 0 2px var(--color-bg); animation: tl-dot-pop var(--motion-duration-base) var(--motion-ease-spring) both; }
+@keyframes tl-dot-pop { from { transform: scale(0); } }
