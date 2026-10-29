@@ -1,0 +1,37 @@
+.pc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100%; }
+.pc-layout__diagram { min-width: 0; min-height: 0; }
+.pc { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--color-line); background: var(--color-bg); }
+.pc__head { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-4) var(--space-3); }
+.pc__eyebrow { color: var(--color-voice); }
+.pc__title { margin: 0; font-size: 16px; font-weight: var(--font-weight-semibold); line-height: 1.3; }
+.pc__hosts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.pc__host { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.pc__host b { display: block; font-size: 13px; }
+.pc__host small { display: block; font-size: 11px; color: var(--color-text-3); }
+.tl-avatar.is-ju { background: var(--color-voice); color: var(--palette-graphite-0); }
+.tl-avatar.is-jerri { background: var(--color-accent); color: var(--color-on-accent); }
+.pc__host .tl-avatar { transition: box-shadow var(--motion-duration-base); }
+.pc__host.is-speaking .tl-avatar { box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-voice); animation: pc-talk 1.2s ease-in-out infinite; }
+@keyframes pc-talk { 50% { box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 6px color-mix(in srgb, var(--color-voice) 50%, transparent); } }
+
+/* Player no padrão da tela de voz do kit (.tl-scr__player). */
+.pc__player { display: flex; align-items: center; gap: var(--space-3); margin: 0 var(--space-4); padding: 8px 14px 8px 8px; border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: var(--shadow-card); }
+.pc__wave { flex: 1; min-width: 0; cursor: pointer; border-radius: 6px; }
+.pc__wave:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.pc__wave .tl-wave { gap: 1px; }
+.pc__clock { flex: none; font-size: 12px; color: var(--color-text-2); }
+
+.pc__chapter { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4) 0; }
+.pc__chapter-name { flex: 1; min-width: 0; display: grid; text-align: center; font-size: 13px; font-weight: var(--font-weight-semibold); }
+.pc__chapter-name small { font-size: 11px; font-weight: var(--font-weight-medium); color: var(--color-text-3); }
+
+.pc__controls { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-line); font-size: 13px; }
+.pc__tx { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-3) var(--space-2) var(--space-6); }
+
+@media (max-width: 900px) {
+  .pc-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 45%) minmax(0, 1fr); }
+  .pc-layout .dg-legend { display: none; }
+  .pc { border-left: 0; border-top: 1px solid var(--color-line); overflow-y: auto; }
+  .pc__tx { flex: none; overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) { .pc__host.is-speaking .tl-avatar { animation: none; } }

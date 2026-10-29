@@ -1,0 +1,10 @@
+.tl-ptx { gap: 2px; }
+.tl-ptx__item { display: grid; gap: 2px; }
+.tl-ptx__chapter { margin: var(--space-4) 12px var(--space-1); color: var(--color-text-3); }
+.tl-ptx__item:first-child .tl-ptx__chapter { margin-top: 0; }
+.tl-ptx .tl-tx__seg { cursor: pointer; }
+.tl-ptx .tl-tx__seg:hover:not(.is-active) { background: var(--color-surface); }
+.tl-ptx .tl-tx__text { font-size: 14px; line-height: 1.5; font-weight: var(--font-weight-regular, 400); }
+.tl-ptx .tl-tx__seg.is-past .tl-tx__text { color: var(--color-text-2); }
+.tl-ptx__who { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: var(--font-weight-semibold); color: var(--color-text-2); }
+.tl-ptx .is-active .tl-ptx__who { color: var(--color-voice); }

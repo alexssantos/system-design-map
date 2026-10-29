@@ -1,0 +1,10 @@
+.tl-slider { display: grid; gap: 10px; }
+.tl-slider__head { display: flex; justify-content: space-between; font-weight: var(--font-weight-medium); }
+.tl-slider__val { color: var(--color-text-2); font-size: var(--font-size-small); }
+.tl-slider__track { position: relative; height: 22px; display: flex; align-items: center; }
+.tl-slider__track::before { content: ''; position: absolute; inset: 9px 0; border-radius: 2px; background: var(--color-surface-3); }
+.tl-slider__fill { position: absolute; left: 0; top: 9px; height: 4px; width: var(--p); border-radius: 2px; background: var(--color-accent); }
+.tl-slider__thumb { position: absolute; left: var(--p); width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--palette-graphite-0); box-shadow: 0 2px 8px rgba(0,0,0,.3), 0 0 0 4px var(--color-accent-soft); pointer-events: none; }
+.tl-slider__bubble { position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 0; padding: 2px 8px; border-radius: 8px; background: var(--color-surface-inverse); color: var(--color-on-inverse); font-size: 11px; font-weight: var(--font-weight-semibold); white-space: nowrap; }
+.tl-slider input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.tl-slider input:focus-visible ~ * , .tl-slider__track:has(input:focus-visible) .tl-slider__thumb { outline: 2px solid var(--color-focus); outline-offset: 2px; }
