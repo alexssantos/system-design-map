@@ -10,6 +10,25 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.2.0] - 2026-10-29
+
+### Adicionado
+
+- Diagrama de arquitetura para cada um dos 15 casos de estudo, em modal sobre o mapa ou em guia nova (`#/diagrama/<caso>`).
+- 23 tipos de componente (cliente, load balancer, gateway, serviço, worker, banco, réplica, cache, fila, log de eventos, storage, CDN, coordenação, WebSocket, job agendado, lock, filtro, busca, índice geoespacial, ledger, métricas...) com ícone animado próprio.
+- Linhas de fluxo animadas por tipo: requisição síncrona, evento/fila, leitura de cache ou índice e replicação, com rótulos e ponto em movimento.
+- Notas de implementação, alertas e dicas "na entrevista" ligadas ao componente a que se referem, e zonas agrupando partes do sistema.
+- Componentes arrastáveis, zoom e legenda gerada a partir do que o diagrama usa.
+- Transly UI Kit (v1.3.0) em `src/ui-kit`: tokens, tema escuro e claro e os componentes Button, IconButton, Badge, Card, Chip, SegmentedControl, Switch e outros.
+- Novos componentes no estilo do kit: Modal, NoteCard e TextField.
+- Botão para alternar entre tema escuro e claro, salvo no navegador.
+- Testes de integridade dos diagramas (todo caso tem diagrama, ids únicos, fluxos e notas apontam para componentes existentes, toda nota de tipo obrigatório presente).
+
+### Alterado
+
+- Barra superior, mapa e painel de detalhes refeitos com o visual do Transly UI Kit.
+- Clique duplo num caso do mapa abre o diagrama.
+
 ## [0.1.0] - 2026-10-29
 
 ### Adicionado
@@ -22,5 +41,6 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.1.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/alexssantos/system-design-map/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alexssantos/system-design-map/releases/tag/v0.1.0

@@ -7,11 +7,16 @@ import {
   type Edge,
   type Node,
 } from '@xyflow/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DetailPanel } from './components/DetailPanel';
+import { DiagramModal, DiagramPage } from './components/DiagramModal';
+import { TextField } from './components/kit/TextField';
 import { nodeTypes } from './components/nodes';
+import { diagramByCase } from './diagrams/data';
+import { Badge, IconButton, SegmentedControl, Switch } from './ui-kit';
 import { cases, edges as graphEdges, groupById, groups, neighborsOf, topicById, topics, topicsByCase } from './data/graph';
 import type { Level } from './data/types';
+import type { Theme } from './theme';
 import { CASE_W, NODE_H, NODE_W, computeLayout } from './layout';
 
 type LevelFocus = Level | 'all';
@@ -26,7 +31,41 @@ function normalize(s: string) {
   return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 }
 
-function MapView() {
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem('sdm-theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch {
+      /* sem storage: segue o padrão */
+    }
+    return 'dark';
+  });
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem('sdm-theme', theme);
+    } catch {
+      /* ignora */
+    }
+  }, [theme]);
+  return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))];
+}
+
+/** Rota por hash: #/diagrama/<caso> abre o diagrama em página própria (guia nova). */
+function useHashRoute() {
+  const read = () => /^#\/diagrama\/([\w-]+)/.exec(window.location.hash)?.[1] ?? null;
+  const [route, setRoute] = useState(read);
+  useEffect(() => {
+    const on = () => setRoute(read());
+    window.addEventListener('hashchange', on);
+    return () => window.removeEventListener('hashchange', on);
+  }, []);
+  return route;
+}
+
+function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) {
+  const [diagramFor, setDiagramFor] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [levelFocus, setLevelFocus] = useState<LevelFocus>('senior');
@@ -155,41 +194,45 @@ function MapView() {
     <div className="app">
       <header className="toolbar">
         <div className="brand">
-          <strong>Mapa de System Design</strong>
-          <span className="muted">
-            {topics.length} tópicos · {cases.length} casos
-          </span>
+          <span className="brand__mark" aria-hidden />
+          <div>
+            <strong>Mapa de System Design</strong>
+            <span className="muted">
+              {topics.length} tópicos · {cases.length} casos · {diagramByCase.size} diagramas
+            </span>
+          </div>
         </div>
-        <input
-          className="search"
-          type="search"
-          placeholder="Buscar conceito, padrão ou caso…"
+        <TextField
+          className="toolbar__search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
+          label="Buscar no mapa"
+          placeholder="Buscar conceito, padrão ou caso…"
         />
-        <div className="segmented" role="radiogroup" aria-label="Nível">
-          {(
-            [
-              ['senior', 'Foco senior'],
-              ['staff', 'Foco staff'],
-              ['all', 'Tudo'],
-            ] as const
-          ).map(([v, label]) => (
-            <button key={v} role="radio" aria-checked={levelFocus === v} onClick={() => setLevelFocus(v)}>
-              {label}
-            </button>
-          ))}
+        <SegmentedControl
+          label="Nível"
+          value={levelFocus}
+          onChange={(v) => setLevelFocus(v as LevelFocus)}
+          options={[
+            { value: 'senior', label: 'Senior', icon: 'user' },
+            { value: 'staff', label: 'Staff', icon: 'crown' },
+            { value: 'all', label: 'Tudo', icon: 'grid' },
+          ]}
+        />
+        <div className="toolbar__switches">
+          <Switch checked={showConcepts} onChange={setShowConcepts} label="Conceitos" />
+          <Switch checked={showPatterns} onChange={setShowPatterns} label="Padrões" />
+          <Switch checked={showAllEdges} onChange={setShowAllEdges} label="Todas as conexões" />
         </div>
-        <label className="toggle">
-          <input type="checkbox" checked={showConcepts} onChange={(e) => setShowConcepts(e.target.checked)} />● Conceitos
-        </label>
-        <label className="toggle">
-          <input type="checkbox" checked={showPatterns} onChange={(e) => setShowPatterns(e.target.checked)} />◆ Padrões
-        </label>
-        <label className="toggle">
-          <input type="checkbox" checked={showAllEdges} onChange={(e) => setShowAllEdges(e.target.checked)} />
-          Todas as conexões
-        </label>
+        <Badge tone="accent" dot>
+          Clique duplo num caso abre o diagrama
+        </Badge>
+        <IconButton
+          icon={theme === 'dark' ? 'sun' : 'moon'}
+          label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          variant="soft"
+          onClick={toggleTheme}
+        />
       </header>
       <div className="body">
         <div className="canvas">
@@ -198,6 +241,8 @@ function MapView() {
             edges={edges}
             nodeTypes={nodeTypes}
             onNodeClick={(_, n) => (n.type === 'topic' || n.type === 'case') && select(n.id)}
+            onNodeDoubleClick={(_, n) => n.type === 'case' && setDiagramFor(n.id)}
+            zoomOnDoubleClick={false}
             onNodeMouseEnter={(_, n) => (n.type === 'topic' || n.type === 'case') && setHovered(n.id)}
             onNodeMouseLeave={() => setHovered(null)}
             onPaneClick={() => setSelected(null)}
@@ -205,23 +250,33 @@ function MapView() {
             fitView
             minZoom={0.15}
             maxZoom={1.5}
-            colorMode="system"
+            colorMode={theme}
             proOptions={{ hideAttribution: true }}
           >
             <Background gap={24} />
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
-        <DetailPanel id={selected} levelFocus={levelFocus} onSelect={select} onClose={() => setSelected(null)} />
+        <DetailPanel
+          id={selected}
+          levelFocus={levelFocus}
+          onSelect={select}
+          onClose={() => setSelected(null)}
+          onOpenDiagram={setDiagramFor}
+        />
       </div>
+      <DiagramModal caseId={diagramFor} theme={theme} onClose={() => setDiagramFor(null)} />
     </div>
   );
 }
 
 export default function App() {
+  const [theme, toggleTheme] = useTheme();
+  const route = useHashRoute();
+  if (route) return <DiagramPage caseId={route} theme={theme} toggleTheme={toggleTheme} />;
   return (
     <ReactFlowProvider>
-      <MapView />
+      <MapView theme={theme} toggleTheme={toggleTheme} />
     </ReactFlowProvider>
   );
 }

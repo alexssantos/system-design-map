@@ -1,0 +1,90 @@
+.dg { display: flex; flex-direction: column; height: 100%; }
+.dg__canvas { flex: 1; min-height: 0; }
+.dg .react-flow { --xy-background-color: var(--color-bg); --xy-background-pattern-color: var(--color-line-strong); }
+.dg .react-flow__controls { box-shadow: var(--shadow-pop); border-radius: var(--radius-sm); overflow: hidden; }
+.dg .react-flow__controls-button { background: var(--color-surface); border-color: var(--color-line); fill: var(--color-text); }
+.dg-handle { opacity: 0; pointer-events: none; }
+
+/* ───── Componentes ───── */
+.dg-comp {
+  position: relative; width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 8px; border-radius: var(--radius-md); text-align: center;
+  background: color-mix(in srgb, var(--kind) 10%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kind) 35%, transparent), var(--shadow-card);
+  transition: transform var(--motion-duration-fast) var(--motion-ease-spring), box-shadow var(--motion-duration-fast);
+  cursor: grab;
+}
+.dg-comp:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1.5px var(--kind), 0 10px 28px rgb(0 0 0 / 0.3); }
+.dg-comp.is-stack::before, .dg-comp.is-stack::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1;
+  background: color-mix(in srgb, var(--kind) 8%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kind) 25%, transparent);
+}
+.dg-comp.is-stack::before { transform: translate(6px, -6px); }
+.dg-comp.is-stack::after { transform: translate(12px, -12px); z-index: -2; opacity: 0.6; }
+.dg-comp__icon { height: 42px; display: grid; place-items: center; }
+.dg-comp__label { font-size: 12.5px; font-weight: var(--font-weight-semibold); line-height: 1.2; }
+.dg-comp__tech { font-size: 10.5px; color: var(--color-text-2); line-height: 1.2; }
+
+/* ───── Notas e zonas ───── */
+.dg-note { width: 100%; }
+.dg-zone { width: 100%; height: 100%; border-radius: var(--radius-lg); border: 1.5px dashed var(--color-line-strong); background: color-mix(in srgb, var(--color-surface) 35%, transparent); }
+.dg-zone__label { position: absolute; top: -9px; left: 16px; padding: 0 8px; background: var(--color-bg); color: var(--color-text-2); }
+
+/* ───── Linhas de fluxo ───── */
+.dg-edge { fill: none; stroke-width: 1.8; }
+.dg-edge--sync { stroke: var(--color-info); }
+.dg-edge--async { stroke: var(--color-success); stroke-dasharray: 7 5; animation: dg-dash 1.2s linear infinite; }
+.dg-edge--read { stroke: var(--chart-6); stroke-dasharray: 2 4; }
+.dg-edge--replication { stroke: var(--color-text-3); stroke-dasharray: 4 4; }
+.dg-edge--note { stroke: var(--color-text-3); stroke-dasharray: 1 4; stroke-width: 1.4; }
+@keyframes dg-dash { to { stroke-dashoffset: -24; } }
+.dg-dot { filter: drop-shadow(0 0 4px currentColor); }
+.dg-dot--sync { fill: var(--color-info); color: var(--color-info); }
+.dg-dot--async { fill: var(--color-success); color: var(--color-success); }
+.dg-dot--read { fill: var(--chart-6); color: var(--chart-6); }
+.dg-dot--replication { fill: var(--color-text-2); color: var(--color-text-2); }
+.dg-edge-label {
+  position: absolute; pointer-events: none; white-space: nowrap;
+  padding: 2px 8px; border-radius: var(--radius-pill); font-size: 10.5px; font-weight: var(--font-weight-medium);
+  background: var(--color-surface-2); color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.dg-edge-label--async { color: var(--color-success); }
+.dg-edge-label--read { color: var(--chart-6); }
+.dg-edge-label--replication { color: var(--color-text-2); }
+
+/* ───── Legenda ───── */
+.dg-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--color-line); font-size: 11.5px; color: var(--color-text-2); }
+.dg-legend__group { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.dg-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ───── Animações dos ícones de componente ───── */
+.dg svg * { transform-box: fill-box; transform-origin: center; }
+.ic-spin { animation: ic-spin 6s linear infinite; }
+.dg svg g.ic-spin { transform-origin: 22px 22px; transform-box: view-box; }
+.ic-spin-slow { animation: ic-spin 14s linear infinite; transform-origin: 22px 22px !important; transform-box: view-box !important; }
+.ic-spin-hand { animation: ic-spin 4s linear infinite; transform-origin: 22px 23px !important; transform-box: view-box !important; }
+.ic-blink { animation: ic-blink 1.6s ease-in-out infinite; }
+.ic-delay { animation-delay: 0.4s; }
+.ic-delay2 { animation-delay: 0.8s; }
+.ic-pulse { animation: ic-pulse 2.4s ease-in-out infinite; }
+.ic-flash { animation: ic-flash 1.8s ease-in-out infinite; }
+.ic-slide { animation: ic-slide 1.6s linear infinite; }
+.ic-bob { animation: ic-bob 1.8s ease-in-out infinite; }
+.ic-draw { stroke-dasharray: 40; animation: ic-draw 2.6s ease-in-out infinite; }
+.ic-nudge { animation: ic-nudge 1.4s ease-in-out infinite; }
+.ic-nudge-rev { animation: ic-nudge-rev 1.4s ease-in-out infinite; }
+.ic-dash { stroke-dasharray: 3 3; animation: dg-dash 1.4s linear infinite; }
+.ic-drop { animation: ic-drop 1.6s ease-in infinite; }
+.ic-write { stroke-dasharray: 18; animation: ic-draw 3s ease-in-out infinite; }
+@keyframes ic-spin { to { transform: rotate(360deg); } }
+@keyframes ic-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes ic-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes ic-flash { 0%, 70%, 100% { opacity: 1; transform: scale(1); } 80% { opacity: 0.3; transform: scale(1.25); } }
+@keyframes ic-slide { from { transform: translateX(-4px); } to { transform: translateX(4px); } }
+@keyframes ic-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes ic-draw { 0% { stroke-dashoffset: 40; } 50%, 100% { stroke-dashoffset: 0; } }
+@keyframes ic-nudge { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(3px); } }
+@keyframes ic-nudge-rev { 0%, 100% { transform: translateX(2px); } 50% { transform: translateX(-3px); } }
+@keyframes ic-drop { 0% { transform: translateY(-4px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }

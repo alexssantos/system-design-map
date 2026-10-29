@@ -1,0 +1,39 @@
+/* Base do Transly UI Kit: reset leve, tipografia, foco, scrollbars e movimento reduzido. */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+@import './tokens.css';
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-body);
+  line-height: var(--font-leading-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+::selection { background: var(--color-accent); color: var(--color-on-accent); }
+
+/* Scrollbar fina, sem trilho, na cor do tema (preferência do Alex). */
+* { scrollbar-width: thin; scrollbar-color: var(--color-surface-3) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }
+
+.tl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tl-caps { font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); letter-spacing: var(--font-tracking-caps); text-transform: uppercase; }
+.tl-num { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

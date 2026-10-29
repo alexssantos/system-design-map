@@ -13,6 +13,14 @@ A base de conteúdo é o board **Roadmap de System Design** no Miro (12 temas e 
 - **Foco senior** apaga o que só costuma ser cobrado de staff. **Foco staff** destaca a expectativa de staff no painel.
 - A busca ignora acentos e procura em títulos e resumos.
 
+## Diagramas de arquitetura
+
+Cada caso tem um diagrama animado: abra pelo botão **Ver diagrama de arquitetura** no painel, com clique duplo no card do caso ou direto em `#/diagrama/<caso>` (o ícone no canto do modal abre em guia nova).
+
+- Cada componente tem ícone e cor do seu tipo (banco, cache, fila, worker...).
+- As linhas mostram o tipo do fluxo: azul é requisição síncrona, verde tracejado é evento/fila, laranja pontilhado é leitura de cache ou índice e cinza é replicação.
+- Notas azuis são de implementação, vermelhas são alertas e as verdes-limão são o que vale citar na entrevista.
+
 ## Rodando localmente
 
 ```bash
@@ -33,7 +41,14 @@ src/
     cases.ts      # 15 casos do board
     graph.ts      # índices derivados (vizinhos, tópicos por caso, arestas)
   layout.ts       # posições fixas dos grupos, tópicos e casos
-  components/     # cards do grafo e painel de detalhes
+  diagrams/
+    types.ts      # componentes, fluxos, notas e zonas de um diagrama
+    data.ts       # os 15 diagramas
+    icons.tsx     # ícone animado por tipo de componente
+    DiagramView.tsx # canvas do diagrama (React Flow)
+  components/     # cards do grafo, painel de detalhes, modal do diagrama
+    kit/          # componentes novos no estilo do Transly UI Kit
+  ui-kit/         # cópia do Transly UI Kit (ver src/ui-kit/README.md)
   App.tsx
 ```
 

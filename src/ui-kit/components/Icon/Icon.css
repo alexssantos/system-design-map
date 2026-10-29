@@ -1,0 +1,176 @@
+/* Micro-animações dos ícones. Gatilho: .tl-animhost:hover (uma vez), [data-anim=loop] (repete), [data-anim=play] (uma vez ao montar).
+   Cada ícone declara o keyframe em --tl-icon-anim e só o gatilho o liga em animation-name: assim a animação recomeça a cada hover
+   (se animation-name ficasse sempre ligado, ela terminaria em 0 s ao montar e o hover só mudaria a duração de uma animação já acabada). */
+@property --tl-icon-anim { syntax: '*'; inherits: false; }
+.tl-icon { display: inline-block; flex: none; vertical-align: middle; overflow: visible; }
+.tl-icon * { transform-box: fill-box; transform-origin: center; }
+
+.tl-icon { --tl-icon-dur: var(--motion-duration-slow); --tl-icon-ease: var(--motion-ease-out); }
+.tl-icon[data-anim='loop'] { --tl-icon-iter: infinite; --tl-icon-dur: var(--motion-duration-loop); }
+.tl-animhost:hover .tl-icon[data-anim='hover'] *,
+.tl-animhost:focus-visible .tl-icon[data-anim='hover'] *,
+.tl-icon[data-anim='loop'] *,
+.tl-icon[data-anim='play'] * {
+  animation-name: var(--tl-icon-anim, none);
+  animation-duration: var(--tl-icon-dur);
+  animation-timing-function: var(--tl-icon-ease);
+  animation-iteration-count: var(--tl-icon-iter, 1);
+  animation-fill-mode: both;
+}
+.tl-icon[data-anim='none'] * { animation: none !important; }
+
+/* swap: setas se cruzam */
+.tl-icon[data-name='swap'] .a1 { --tl-icon-anim: tl-i-nudge-r; }
+.tl-icon[data-name='swap'] .a2 { --tl-icon-anim: tl-i-nudge-l; }
+@keyframes tl-i-nudge-r { 0%,100% { transform: none; } 45% { transform: translateX(3px); } }
+@keyframes tl-i-nudge-l { 0%,100% { transform: none; } 45% { transform: translateX(-3px); } }
+
+/* copy: folha da frente desliza para trás */
+.tl-icon[data-name='copy'] .a2 { --tl-icon-anim: tl-i-copy; }
+.tl-icon[data-name='copy'] .a1 { --tl-icon-anim: tl-i-copy-back; }
+@keyframes tl-i-copy { 0%,100% { transform: none; } 45% { transform: translate(-2px, 2px); } }
+@keyframes tl-i-copy-back { 0%,100% { transform: none; } 45% { transform: translate(1px, -1px) scale(.96); } }
+
+/* check, mic-off, wifi-off: traço desenhado */
+.tl-icon .draw { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.tl-icon[data-name='check'] .draw,
+.tl-icon[data-name='mic-off'] .draw,
+.tl-icon[data-name='wifi-off'] .draw,
+.tl-icon[data-name='eye-off'] .draw { --tl-icon-anim: tl-i-draw; }
+@keyframes tl-i-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* mic: cápsula sobe e volta */
+.tl-icon[data-name='mic'] .a1 { --tl-icon-anim: tl-i-bob; }
+@keyframes tl-i-bob { 0%,100% { transform: none; } 40% { transform: translateY(-2px) scaleY(1.05); } }
+
+/* speaker: ondas acendem em sequência */
+.tl-icon[data-name='speaker'] .w1 { --tl-icon-anim: tl-i-wave; }
+.tl-icon[data-name='speaker'] .w2 { --tl-icon-anim: tl-i-wave; animation-delay: 120ms; }
+@keyframes tl-i-wave { 0% { opacity: 0; transform: translateX(-2px); } 60%,100% { opacity: 1; transform: none; } }
+
+/* pin: inclina e crava */
+.tl-icon[data-name='pin'] .a1 { --tl-icon-anim: tl-i-pin; transform-origin: 50% 100%; }
+@keyframes tl-i-pin { 0% { transform: none; } 35% { transform: rotate(-18deg) translateY(-2px); } 70% { transform: rotate(4deg) translateY(1px); } 100% { transform: none; } }
+
+/* close / plus: giro de 90° */
+.tl-icon[data-name='close'] .a1, .tl-icon[data-name='plus'] .a1 { --tl-icon-anim: tl-i-spin90; }
+@keyframes tl-i-spin90 { from { transform: rotate(0); } to { transform: rotate(90deg); } }
+
+/* chevrons e setas: empurram na direção */
+.tl-icon[data-name='chevron-left'] .a1 { --tl-icon-anim: tl-i-nudge-l; }
+.tl-icon[data-name='chevron-right'] .a1 { --tl-icon-anim: tl-i-nudge-r; }
+.tl-icon[data-name='chevron-down'] .a1 { --tl-icon-anim: tl-i-nudge-d; }
+@keyframes tl-i-nudge-d { 0%,100% { transform: none; } 45% { transform: translateY(2px); } }
+.tl-icon[data-name='arrow-up-right'] .a1 { --tl-icon-anim: tl-i-out-ur; }
+.tl-icon[data-name='arrow-down-left'] .a1 { --tl-icon-anim: tl-i-out-dl; }
+.tl-icon[data-name='external'] .a1 { --tl-icon-anim: tl-i-out-ur; }
+.tl-icon[data-name='download'] .a1 { --tl-icon-anim: tl-i-out-d; }
+@keyframes tl-i-out-ur { 0% { transform: none; } 45% { transform: translate(5px, -5px); opacity: 0; } 46% { transform: translate(-5px, 5px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes tl-i-out-dl { 0% { transform: none; } 45% { transform: translate(-5px, 5px); opacity: 0; } 46% { transform: translate(5px, -5px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes tl-i-out-d { 0% { transform: none; } 45% { transform: translateY(6px); opacity: 0; } 46% { transform: translateY(-6px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+/* search: lupa balança */
+.tl-icon[data-name='search'] .a1 { --tl-icon-anim: tl-i-wiggle; }
+@keyframes tl-i-wiggle { 0%,100% { transform: none; } 25% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } }
+
+/* settings / refresh / command: giro */
+.tl-icon[data-name='settings'] .a1 { --tl-icon-anim: tl-i-spin90; --tl-icon-ease: var(--motion-ease-spring); }
+.tl-icon[data-name='refresh'] .a1, .tl-icon[data-name='command'] .a1 { --tl-icon-anim: tl-i-spin; }
+@keyframes tl-i-spin { to { transform: rotate(360deg); } }
+
+/* history: ponteiros dão a volta, seta recua */
+.tl-icon[data-name='history'] .a1 { --tl-icon-anim: tl-i-spin; transform-origin: 0% 0%; transform-box: view-box; transform-origin: 12px 12px; }
+.tl-icon[data-name='history'] .a2 { --tl-icon-anim: tl-i-rewind; transform-box: view-box; transform-origin: 12px 12px; }
+@keyframes tl-i-rewind { 0%,100% { transform: none; } 50% { transform: rotate(-30deg); } }
+
+/* chart / waveform: barras crescem em sequência */
+.tl-icon[data-name='chart'] [class^='b'] { transform-origin: 50% 100%; --tl-icon-anim: tl-i-grow; }
+.tl-icon[data-name='chart'] .b2, .tl-icon[data-name='waveform'] .b2 { animation-delay: 80ms; }
+.tl-icon[data-name='chart'] .b3, .tl-icon[data-name='waveform'] .b3 { animation-delay: 160ms; }
+.tl-icon[data-name='waveform'] .b4 { animation-delay: 240ms; }
+.tl-icon[data-name='waveform'] .b5 { animation-delay: 320ms; }
+.tl-icon[data-name='waveform'] [class^='b'] { --tl-icon-anim: tl-i-eq; }
+@keyframes tl-i-grow { 0% { transform: scaleY(.2); } 70% { transform: scaleY(1.12); } 100% { transform: none; } }
+@keyframes tl-i-eq { 0%,100% { transform: none; } 35% { transform: scaleY(.35); } 70% { transform: scaleY(1.2); } }
+
+/* globe: meridiano gira (ilusão 3D) */
+.tl-icon[data-name='globe'] .a1 { --tl-icon-anim: tl-i-globe; }
+@keyframes tl-i-globe { 0% { transform: scaleX(1); } 50% { transform: scaleX(.1); } 100% { transform: scaleX(1); } }
+
+/* trash: tampa levanta */
+.tl-icon[data-name='trash'] .a1 { --tl-icon-anim: tl-i-lid; transform-origin: 0% 100%; }
+@keyframes tl-i-lid { 0%,100% { transform: none; } 45% { transform: translateY(-2px) rotate(-14deg); } }
+
+/* sparkles / star: brilho */
+.tl-icon[data-name='sparkles'] .s1 { --tl-icon-anim: tl-i-twinkle; }
+.tl-icon[data-name='sparkles'] .s2 { --tl-icon-anim: tl-i-twinkle; animation-delay: 150ms; }
+.tl-icon[data-name='star'] .a1, .tl-icon[data-name='bolt'] .a1 { --tl-icon-anim: tl-i-pop; --tl-icon-ease: var(--motion-ease-spring); }
+@keyframes tl-i-twinkle { 0%,100% { transform: none; } 45% { transform: scale(.6) rotate(20deg); opacity: .5; } }
+@keyframes tl-i-pop { 0% { transform: none; } 40% { transform: scale(.75) rotate(-12deg); } 75% { transform: scale(1.15) rotate(6deg); } 100% { transform: none; } }
+
+/* bell / alert: sacode */
+.tl-icon[data-name='bell'] .a1 { --tl-icon-anim: tl-i-ring; transform-origin: 50% 0%; }
+.tl-icon[data-name='alert'] .a1 { --tl-icon-anim: tl-i-shake; }
+@keyframes tl-i-ring { 0%,100% { transform: none; } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(7deg); } 80% { transform: rotate(-4deg); } }
+@keyframes tl-i-shake { 0%,100% { transform: none; } 20%,60% { transform: translateX(-2px); } 40%,80% { transform: translateX(2px); } }
+
+/* info / user / more / grid / keyboard: pulos */
+.tl-icon[data-name='info'] .a1, .tl-icon[data-name='user'] .a1 { --tl-icon-anim: tl-i-hop; }
+.tl-icon[data-name='more'] [class^='d'], .tl-icon[data-name='grid'] [class^='d'] { --tl-icon-anim: tl-i-hop; }
+.tl-icon[data-name='more'] .d2, .tl-icon[data-name='grid'] .d2 { animation-delay: 70ms; }
+.tl-icon[data-name='more'] .d3, .tl-icon[data-name='grid'] .d3 { animation-delay: 140ms; }
+.tl-icon[data-name='grid'] .d4 { animation-delay: 210ms; }
+.tl-icon[data-name='keyboard'] [class^='k'] { --tl-icon-anim: tl-i-key; }
+.tl-icon[data-name='keyboard'] .k2 { animation-delay: 80ms; }
+.tl-icon[data-name='keyboard'] .k3 { animation-delay: 160ms; }
+.tl-icon[data-name='keyboard'] .k4 { animation-delay: 240ms; }
+@keyframes tl-i-hop { 0%,100% { transform: none; } 40% { transform: translateY(-2.5px); } }
+@keyframes tl-i-key { 0%,100% { opacity: 1; } 40% { opacity: .2; } }
+
+/* text: cursor pisca / phrase: linhas se escrevem */
+.tl-icon[data-name='text'] .a1 { --tl-icon-anim: tl-i-blink; }
+@keyframes tl-i-blink { 0%,100% { opacity: 1; } 30%,60% { opacity: 0; } }
+.tl-icon[data-name='phrase'] [class^='l'] { transform-origin: 0% 50%; --tl-icon-anim: tl-i-write; }
+.tl-icon[data-name='phrase'] .l2 { animation-delay: 70ms; }
+.tl-icon[data-name='phrase'] .l3 { animation-delay: 140ms; }
+.tl-icon[data-name='phrase'] .l4 { animation-delay: 210ms; }
+@keyframes tl-i-write { from { transform: scaleX(0); } to { transform: none; } }
+
+/* book: página vira / sun: raios giram / moon: balança / play, stop: aperta / eraser: esfrega */
+.tl-icon[data-name='book'] .a1 { --tl-icon-anim: tl-i-globe; }
+.tl-icon[data-name='sun'] .a1 { --tl-icon-anim: tl-i-spin90; }
+.tl-icon[data-name='moon'] .a1 { --tl-icon-anim: tl-i-wiggle; }
+.tl-icon[data-name='play'] .a1, .tl-icon[data-name='stop'] .a1 { --tl-icon-anim: tl-i-press; --tl-icon-ease: var(--motion-ease-spring); }
+.tl-icon[data-name='eraser'] .a1 { --tl-icon-anim: tl-i-shake; }
+@keyframes tl-i-press { 0%,100% { transform: none; } 40% { transform: scale(.8); } }
+
+/* clipboard: a presilha pula e as linhas se escrevem */
+.tl-icon[data-name='clipboard'] .a1 { --tl-icon-anim: tl-i-clip; }
+.tl-icon[data-name='clipboard'] [class^='l'] { transform-origin: 0% 50%; --tl-icon-anim: tl-i-write; }
+.tl-icon[data-name='clipboard'] .l2 { animation-delay: 70ms; }
+.tl-icon[data-name='clipboard'] .l3 { animation-delay: 140ms; }
+@keyframes tl-i-clip { 0%,100% { transform: none; } 40% { transform: translateY(-2.5px) scale(1.08); } }
+/* opacity: a metade cheia some e volta */
+.tl-icon[data-name='opacity'] .a1 { --tl-icon-anim: tl-i-opacity; }
+@keyframes tl-i-opacity { 0%,100% { opacity: 1; } 50% { opacity: .15; } }
+/* eye-off: pupila olha de lado e o risco se desenha */
+.tl-icon[data-name='eye-off'] .a1 { --tl-icon-anim: tl-i-look; }
+@keyframes tl-i-look { 0%,100% { transform: none; } 40% { transform: translateX(-2px); } 70% { transform: translateX(1.5px); } }
+/* bubble: a bolha flutua e o T balança */
+.tl-icon[data-name='bubble'] .a1 { --tl-icon-anim: tl-i-float; }
+.tl-icon[data-name='bubble'] .a2 { --tl-icon-anim: tl-i-float; animation-delay: 60ms; }
+@keyframes tl-i-float { 0%,100% { transform: none; } 40% { transform: translateY(-2.5px); } 70% { transform: translateY(1px); } }
+
+/* move: as setas abrem e voltam; recenter: o ponto pulsa no centro */
+.tl-icon[data-name='move'] .a1 { --tl-icon-anim: tl-i-open; transform-origin: 12px 12px; transform-box: view-box; }
+@keyframes tl-i-open { 0%,100% { transform: none; } 45% { transform: scale(1.12); } }
+.tl-icon[data-name='recenter'] .a1 { --tl-icon-anim: tl-i-pulse; transform-origin: 12px 12px; transform-box: view-box; }
+@keyframes tl-i-pulse { 0%,100% { transform: none; } 45% { transform: scale(1.6); } }
+
+/* crown: a coroa pula e brilha (Pro); key: a chave gira na fechadura; lock: o arco abre; update: a seta desce dentro do círculo */
+.tl-icon[data-name='crown'] .a1 { --tl-icon-anim: tl-i-pop; --tl-icon-ease: var(--motion-ease-spring); }
+.tl-icon[data-name='key'] .a1 { --tl-icon-anim: tl-i-turn; transform-origin: 8px 12px; transform-box: view-box; }
+@keyframes tl-i-turn { 0%,100% { transform: none; } 45% { transform: rotate(-24deg); } }
+.tl-icon[data-name='lock'] .a1 { --tl-icon-anim: tl-i-unlock; }
+@keyframes tl-i-unlock { 0%,100% { transform: none; } 45% { transform: translateY(-2.5px); } }
+.tl-icon[data-name='update'] .a1 { --tl-icon-anim: tl-i-out-d; }
