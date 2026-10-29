@@ -6,6 +6,7 @@
 import type { MotionProps, Transition, Variants } from 'motion/react';
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import { Alert as _Alert } from './components/Alert/Alert';
+import { Avatar as _Avatar } from './components/Avatar/Avatar';
 import { Badge as _Badge } from './components/Badge/Badge';
 import { Button as _Button } from './components/Button/Button';
 import { Card as _Card } from './components/Card/Card';
@@ -14,9 +15,11 @@ import { Icon as _Icon } from './components/Icon/Icon';
 import { IconButton as _IconButton } from './components/IconButton/IconButton';
 import { Kbd as _Kbd } from './components/Kbd/Kbd';
 import { SectionLabel as _SectionLabel } from './components/SectionLabel/SectionLabel';
+import { Slider as _Slider } from './components/Slider/Slider';
 import { SegmentedControl as _SegmentedControl } from './components/SegmentedControl/SegmentedControl';
 import { Switch as _Switch } from './components/Switch/Switch';
 import { Tooltip as _Tooltip } from './components/Tooltip/Tooltip';
+import { Waveform as _Waveform } from './components/Waveform/Waveform';
 
 type Tone = 'accent' | 'neutral' | 'info' | 'voice' | 'success' | 'danger' | 'warning';
 interface Base {
@@ -128,3 +131,30 @@ export const ease = m.ease as unknown as Record<'out' | 'inOut' | 'in' | 'spring
 export const duration = m.duration as Record<'instant' | 'fast' | 'base' | 'slow' | 'window' | 'loop', number>;
 export const fadeUp = m.fadeUp as unknown as (i?: number) => MotionProps;
 export const windowVariants = m.windowVariants as unknown as Variants;
+
+export const Waveform = _Waveform as unknown as ComponentType<{
+  live?: boolean;
+  levels?: number[];
+  bars?: number;
+  height?: number;
+  /** 0–1: barras já tocadas ficam acesas. */
+  progress?: number;
+  onLevel?: (v: number) => void;
+  tone?: 'voice' | 'accent' | 'muted';
+  className?: string;
+}>;
+
+export const Slider = _Slider as unknown as ComponentType<{
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  label?: string;
+  format?: (v: number) => ReactNode;
+  bubble?: boolean;
+  disabled?: boolean;
+  className?: string;
+}>;
+
+export const Avatar = _Avatar as unknown as ComponentType<{ name: string; src?: string; size?: number; className?: string }>;

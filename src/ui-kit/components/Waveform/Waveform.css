@@ -1,0 +1,7 @@
+.tl-wave { --tone: var(--color-voice); display: flex; align-items: center; gap: 3px; width: 100%; min-width: 0; overflow: hidden; }
+.tl-wave--accent { --tone: var(--color-accent); }
+.tl-wave--muted { --tone: var(--color-text-3); }
+.tl-wave i { flex: 1; min-width: 1px; height: 100%; border-radius: 3px; background: var(--tone); opacity: .9; transition: transform 140ms var(--motion-ease-out); }
+.tl-wave:not(.is-live) i { opacity: .35; }
+.tl-wave i.is-played { opacity: 1; }
+.tl-wave.is-live { -webkit-mask: linear-gradient(90deg, transparent, #000 25%); mask: linear-gradient(90deg, transparent, #000 25%); }

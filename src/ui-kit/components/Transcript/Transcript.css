@@ -1,0 +1,11 @@
+.tl-tx { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tl-tx__seg { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: var(--space-3); padding: 10px 12px; border-radius: var(--radius-md); transition: background-color var(--motion-duration-base); }
+.tl-tx__seg.is-active { background: color-mix(in srgb, var(--color-voice) 14%, transparent); }
+.tl-tx__time { align-self: start; padding: 2px 0 0; border: 0; background: none; color: var(--color-voice); font-family: var(--font-family-mono); font-size: 12px; text-align: left; }
+.tl-tx__time:hover { text-decoration: underline; }
+.tl-tx__texts { display: grid; gap: 3px; }
+.tl-tx__text { margin: 0; font-size: 15px; font-weight: var(--font-weight-medium); }
+.tl-tx__seg.is-partial .tl-tx__text { color: var(--color-text-2); }
+.tl-tx__tr { margin: 0; color: var(--color-text-2); font-size: var(--font-size-small); }
+.tl-tx__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 3px; vertical-align: -2px; border-radius: 1px; background: var(--color-voice); animation: tl-caret 1s steps(1) infinite; }
+@keyframes tl-caret { 50% { opacity: 0; } }

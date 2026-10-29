@@ -9,12 +9,13 @@ import {
   ReactFlowProvider,
   getBezierPath,
   useNodesState,
+  useReactFlow,
   type Edge,
   type EdgeProps,
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { NoteCard } from '../components/kit/NoteCard';
 import { KindIcon, kindColor, kindName } from './icons';
 import type { ComponentKind, Diagram, DiagramComponent, FlowKind, NoteKind } from './types';
@@ -228,14 +229,45 @@ export function DiagramLegend({ diagram }: { diagram: Diagram }) {
   );
 }
 
-function Canvas({ diagram, colorMode }: { diagram: Diagram; colorMode: 'dark' | 'light' }) {
+interface ViewProps {
+  diagram: Diagram;
+  colorMode: 'dark' | 'light';
+  /** Componentes e notas (`note-<i>`) em destaque; o resto fica apagado. Vazio = nada em destaque. */
+  focus?: string[];
+  /** A câmera acompanha o destaque. */
+  follow?: boolean;
+  /** Clique num componente ou nota. */
+  onPick?: (id: string) => void;
+}
+
+const focusClass = (id: string, on: Set<string>) => (on.size === 0 ? '' : on.has(id) ? 'is-focus' : 'is-dim');
+
+function Canvas({ diagram, colorMode, focus, follow, onPick }: ViewProps) {
   const initial = useMemo(() => build(diagram), [diagram]);
-  const [nodes, , onNodesChange] = useNodesState(initial.nodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
+  const { fitView } = useReactFlow();
+  const key = (focus ?? []).join(',');
+
+  useEffect(() => {
+    const on = new Set(focus);
+    setNodes((ns) => ns.map((n) => (n.type === 'zone' ? n : { ...n, className: focusClass(n.id, on) })));
+    if (!follow) return;
+    const ids = [...on].filter((id) => initial.nodes.some((n) => n.id === id));
+    fitView(ids.length ? { nodes: ids.map((id) => ({ id })), duration: 900, padding: 0.4, maxZoom: 1.1 } : { duration: 900, padding: 0.08 });
+  }, [key, follow]);
+
+  const edges = useMemo(() => {
+    const on = new Set(focus);
+    if (on.size === 0) return initial.edges;
+    return initial.edges.map((e) => ({ ...e, className: on.has(e.source) && on.has(e.target) ? 'is-focus' : 'is-dim' }));
+  }, [initial, key]);
+
   return (
     <ReactFlow
       nodes={nodes}
-      edges={initial.edges}
+      edges={edges}
       onNodesChange={onNodesChange}
+      onNodeClick={onPick && ((_, n) => n.type !== 'zone' && onPick(n.id))}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       nodesConnectable={false}
@@ -253,15 +285,15 @@ function Canvas({ diagram, colorMode }: { diagram: Diagram; colorMode: 'dark' | 
 }
 
 /** Canvas do diagrama de um caso. Componentes podem ser arrastados para estudar o desenho. */
-export function DiagramView({ diagram, colorMode }: { diagram: Diagram; colorMode: 'dark' | 'light' }) {
+export function DiagramView(props: ViewProps) {
   return (
-    <div className="dg">
+    <div className={`dg${props.focus?.length ? ' has-focus' : ''}${props.onPick ? ' is-pickable' : ''}`}>
       <div className="dg__canvas">
         <ReactFlowProvider>
-          <Canvas key={diagram.caseId} diagram={diagram} colorMode={colorMode} />
+          <Canvas key={props.diagram.caseId} {...props} />
         </ReactFlowProvider>
       </div>
-      <DiagramLegend diagram={diagram} />
+      <DiagramLegend diagram={props.diagram} />
     </div>
   );
 }

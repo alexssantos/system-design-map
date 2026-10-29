@@ -10,6 +10,21 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.3.0] - 2026-10-29
+
+### Adicionado
+
+- Podcast do caso 01 (Encurtador de URL): 14 minutos de conversa entre Juliana e Jerri, em 10 capítulos, explicando o porquê de cada peça na ordem em que uma depende da outra, com exemplos reais (bit.ly, t.co, ticket servers do Flickr, Snowflake do Twitter, leases do memcache do Facebook, NSQ). Áudio gerado na ElevenLabs.
+- Painel do podcast ao lado do diagrama, no modal e na guia nova: play/pausa, forma de onda real do áudio com clique para avançar, velocidade de 0,75× a 2×, troca de capítulo e transcrição que acompanha a fala.
+- O diagrama acende as peças de que a conversa está falando e apaga o resto; a câmera acompanha (dá para desligar). Clicar numa peça ou nota leva o áudio ao primeiro trecho em que ela aparece; clicar numa fala da transcrição também.
+- Componentes Waveform, Slider, Avatar e Transcript copiados do Transly UI Kit; novo `PodcastTranscript` no estilo do kit.
+- `scripts/podcast/build.mjs`: junta os áudios de cada fala, mede os tempos e gera a forma de onda.
+- Testes que conferem se todo foco do roteiro existe no diagrama e se os tempos cobrem todas as falas.
+
+### Alterado
+
+- No celular, o cabeçalho do diagrama quebra em duas linhas em vez de espremer o título.
+
 ## [0.2.1] - 2026-10-29
 
 ### Corrigido
@@ -51,7 +66,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.2.1...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/alexssantos/system-design-map/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/alexssantos/system-design-map/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alexssantos/system-design-map/releases/tag/v0.1.0
