@@ -1,12 +1,16 @@
-import { toPng } from 'html-to-image';
+import { toPng, toSvg } from 'html-to-image';
 
 /** Margem em volta do recorte, em px do canvas. */
 const PADDING = 48;
 /** Maior lado da imagem final (antes do pixelRatio), para o navegador não estourar a memória do canvas. */
 const MAX_SIDE = 6000;
 
+export type ImageFormat = 'png' | 'svg';
+
 export interface FlowImageOptions {
   fileName: string;
+  /** PNG é uma foto do momento; SVG continua animado quando aberto no navegador. */
+  format?: ImageFormat;
   /** Quais nós entram na imagem (pelo id do React Flow). Sem filtro, entram todos. */
   includeNode?: (id: string) => boolean;
   /** Quais arestas entram na imagem. Sem filtro, entram todas as que estão desenhadas. */
@@ -41,7 +45,7 @@ function slug(s: string) {
 }
 
 /** Propriedades de SVG que vêm de classes CSS e precisam ir para o estilo inline antes da cópia. */
-const SVG_PROPS = ['stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity', 'fill', 'fill-opacity', 'opacity'] as const;
+const SVG_PROPS = ['stroke', 'stroke-width', 'stroke-dasharray', 'stroke-opacity', 'fill', 'fill-opacity', 'opacity', 'filter', 'animation'] as const;
 
 /**
  * O html-to-image não copia o estilo computado dos elementos dentro de um <svg> das arestas, então as linhas
@@ -58,18 +62,43 @@ function inlineEdgeStyles(viewport: HTMLElement) {
   return () => undo.forEach((fn) => fn());
 }
 
-function download(dataUrl: string, fileName: string) {
+/**
+ * O SVG leva o estilo computado de cada elemento, inclusive o nome das animações CSS, mas não as regras
+ * @keyframes. Junta as da página para o arquivo continuar animando sozinho.
+ */
+function pageKeyframes() {
+  const out: string[] = [];
+  for (const sheet of document.styleSheets) {
+    let rules: CSSRuleList;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      continue; // folha de outra origem
+    }
+    for (const rule of rules) if (rule instanceof CSSKeyframesRule) out.push(rule.cssText);
+  }
+  return out.join('\n');
+}
+
+/** Monta o arquivo final: keyframes da página e um fundo fixo (o fundo do clone anda junto com o transform). */
+function finishSvg(svgDataUrl: string, background: string) {
+  const svg = decodeURIComponent(svgDataUrl.slice(svgDataUrl.indexOf(',') + 1));
+  const head = `<style><![CDATA[${pageKeyframes()}]]></style><rect width="100%" height="100%" fill="${background}"/>`;
+  return svg.replace(/^(<svg[^>]*>)/, `$1${head}`);
+}
+
+function download(href: string, fileName: string, format: ImageFormat) {
   const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = `${slug(fileName)}.png`;
+  a.href = href;
+  a.download = `${slug(fileName)}.${format}`;
   a.click();
 }
 
 /**
- * Exporta um React Flow como PNG, enquadrando só os nós escolhidos.
+ * Exporta um React Flow como PNG ou SVG, enquadrando só os nós escolhidos.
  * Trabalha direto no DOM (`.react-flow__viewport`), então serve tanto para o mapa quanto para os diagramas.
  */
-export async function exportFlowPng(root: HTMLElement, opts: FlowImageOptions) {
+export async function exportFlowImage(root: HTMLElement, opts: FlowImageOptions) {
   const flow = root.matches('.react-flow') ? root : root.querySelector<HTMLElement>('.react-flow');
   const viewport = flow?.querySelector<HTMLElement>('.react-flow__viewport');
   if (!flow || !viewport) throw new Error('Canvas do diagrama não encontrado');
@@ -105,12 +134,15 @@ export async function exportFlowPng(root: HTMLElement, opts: FlowImageOptions) {
   const width = Math.ceil(frame.w * scale);
   const height = Math.ceil(frame.h * scale);
 
+  const format = opts.format ?? 'png';
+  const background = getComputedStyle(flow).getPropertyValue('--xy-background-color').trim() || getComputedStyle(document.body).backgroundColor;
   const restore = inlineEdgeStyles(viewport);
-  const dataUrl = await toPng(viewport, {
+  const render = format === 'svg' ? toSvg : toPng;
+  const dataUrl = await render(viewport, {
     width,
     height,
     pixelRatio: 2,
-    backgroundColor: getComputedStyle(flow).getPropertyValue('--xy-background-color').trim() || getComputedStyle(document.body).backgroundColor,
+    backgroundColor: format === 'png' ? background : undefined,
     style: {
       width: `${width}px`,
       height: `${height}px`,
@@ -121,13 +153,16 @@ export async function exportFlowPng(root: HTMLElement, opts: FlowImageOptions) {
       const cls = el.classList;
       if (!cls) return true;
       // Pontos que andam pelas linhas (animateMotion) ficariam parados no começo da aresta numa foto.
-      if (el.tagName === 'circle' && el.querySelector('animateMotion')) return false;
+      if (format === 'png' && el.tagName === 'circle' && el.querySelector('animateMotion')) return false;
       if (cls.contains('react-flow__node')) return keep.has(el.getAttribute('data-id') ?? '');
       if (cls.contains('react-flow__edge') && opts.includeEdge) return opts.includeEdge(el.getAttribute('data-id') ?? '');
       return true;
     },
   }).finally(restore);
-  download(dataUrl, opts.fileName);
+  if (format === 'png') return download(dataUrl, opts.fileName, format);
+  const url = URL.createObjectURL(new Blob([finishSvg(dataUrl, background)], { type: 'image/svg+xml' }));
+  download(url, opts.fileName, format);
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 /** Guarda o estado "gerando imagem" de um botão de download e avisa no console se falhar. */

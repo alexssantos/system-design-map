@@ -13,7 +13,8 @@ import { DiagramModal, DiagramPage } from './components/DiagramModal';
 import { TextField } from './components/kit/TextField';
 import { nodeTypes } from './components/nodes';
 import { diagramByCase } from './diagrams/data';
-import { exportFlowPng, runExport } from './export/flowImage';
+import { exportFlowImage, runExport, type ImageFormat } from './export/flowImage';
+import { FormatPicker } from './components/FormatPicker';
 import { Avatar, Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
 import { cases, edges as graphEdges, groupById, groups, neighborsOf, topicById, topics, topicsByCase } from './data/graph';
 import type { Level } from './data/types';
@@ -78,6 +79,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
   const [showAllEdges, setShowAllEdges] = useState(false);
   const [query, setQuery] = useState('');
   const [exporting, setExporting] = useState<'all' | 'selection' | null>(null);
+  const [format, setFormat] = useState<ImageFormat>('png');
   const canvasRef = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
 
@@ -204,8 +206,9 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
     runExport(
       (busy) => setExporting(busy ? which : null),
       () =>
-        exportFlowPng(root, {
+        exportFlowImage(root, {
           fileName: name,
+          format,
           isContainer,
           includeNode: around ? (id) => around.has(id) : undefined,
           includeEdge: around ? (id) => graphEdges.some((e) => e.id === id && (e.source === selected || e.target === selected)) : undefined,
@@ -260,13 +263,14 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           Clique duplo num caso abre o diagrama
         </Badge>
         <div className="toolbar__downloads" role="group" aria-label="Baixar imagem">
+          <FormatPicker value={format} onChange={setFormat} />
           <Button
             variant="dark"
             size="sm"
             icon="download"
             disabled={!selected || Boolean(exporting)}
             loading={exporting === 'selection'}
-            title={selected ? 'Baixa o item selecionado e as conexões dele em PNG' : 'Selecione um tópico ou caso no mapa'}
+            title={selected ? `Baixa o item selecionado e as conexões dele em ${format.toUpperCase()}` : 'Selecione um tópico ou caso no mapa'}
             onClick={() => exportMap('selection')}
           >
             Conexões
@@ -277,7 +281,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
             icon="download"
             disabled={Boolean(exporting)}
             loading={exporting === 'all'}
-            title="Baixa o mapa inteiro em PNG"
+            title={`Baixa o mapa inteiro em ${format.toUpperCase()}`}
             onClick={() => exportMap('all')}
           >
             Mapa inteiro

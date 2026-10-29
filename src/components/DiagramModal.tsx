@@ -3,7 +3,8 @@ import type { Theme } from '../theme';
 import { caseById } from '../data/graph';
 import { DiagramView } from '../diagrams/DiagramView';
 import { diagramByCase } from '../diagrams/data';
-import { exportFlowPng, runExport } from '../export/flowImage';
+import { exportFlowImage, runExport, type ImageFormat } from '../export/flowImage';
+import { FormatPicker } from './FormatPicker';
 import { Badge, Button, IconButton } from '../ui-kit';
 import { CasePodcast, hasPodcast } from './CasePodcast';
 import { Modal } from './kit/Modal';
@@ -21,17 +22,23 @@ function CaseBody({ caseId, theme, listen, bodyRef }: { caseId: string; theme: T
   );
 }
 
-/** Baixa o diagrama do caso inteiro em PNG, do jeito que ele aparece agora (tema e destaques). */
+/** Baixa o diagrama do caso inteiro do jeito que ele aparece agora (tema e destaques), em PNG ou SVG animado. */
 function DownloadDiagram({ caseId, bodyRef }: { caseId: string; bodyRef: RefObject<HTMLDivElement | null> }) {
   const [busy, setBusy] = useState(false);
+  const [format, setFormat] = useState<ImageFormat>('png');
   const c = caseById.get(caseId)!;
   return (
-    <IconButton
-      icon="download"
-      label={busy ? 'Gerando imagem…' : 'Baixar diagrama (PNG)'}
-      disabled={busy}
-      onClick={() => bodyRef.current && runExport(setBusy, () => exportFlowPng(bodyRef.current!, { fileName: `caso ${pad(c.number)} ${c.title}` }))}
-    />
+    <div className="diagram-download">
+      <FormatPicker value={format} onChange={setFormat} />
+      <IconButton
+        icon="download"
+        label={busy ? 'Gerando imagem…' : `Baixar diagrama (${format === 'svg' ? 'SVG animado' : 'PNG'})`}
+        disabled={busy}
+        onClick={() =>
+          bodyRef.current && runExport(setBusy, () => exportFlowImage(bodyRef.current!, { fileName: `caso ${pad(c.number)} ${c.title}`, format }))
+        }
+      />
+    </div>
   );
 }
 
