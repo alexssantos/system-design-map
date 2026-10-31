@@ -1,3 +1,4 @@
+import { PanelHelp } from '../components/Toolbar';
 import { Badge, Card, Chip, Icon, IconButton, SectionLabel } from '../ui-kit';
 import { aiGroupById, aiRelatedOf, aiStageByN, aiStages, aiTopicById, aiTopics, orderOf, prereqPath, unlocksOf } from './graph';
 
@@ -31,40 +32,41 @@ export function AiPanel({ id, onSelect, onClose }: Props) {
 
   if (!topic) {
     return (
-      <aside className="panel">
-        <h2>Trilha de estudo</h2>
-        <p className="muted">
-          Da primeira aplicação até colocá-la em escala. O número em cada card é a posição na trilha: 1 é o primeiro a aprender,{' '}
-          {aiTopics.length} é o último.
-        </p>
-        <ol className="ai-stages">
-          {aiStages.map((s) => {
-            const list = aiTopics.filter((t) => t.stage === s.n);
-            return (
-              <li key={s.n} style={{ '--step': (s.n - 1) / (aiStages.length - 1) } as React.CSSProperties}>
-                <span className="ai-stages__n">{s.n}</span>
-                <div>
-                  <b>{s.name}</b>
-                  <div className="muted">
-                    {s.description} {list.length} termos, do {orderOf.get(list[0].id)} ao {orderOf.get(list[list.length - 1].id)}.
+      <aside className="panel is-empty">
+        <PanelHelp title="Trilha de estudo">
+          <p className="muted">
+            Da primeira aplicação até colocá-la em escala. O número em cada card é a posição na trilha: 1 é o primeiro a aprender,{' '}
+            {aiTopics.length} é o último.
+          </p>
+          <ol className="ai-stages">
+            {aiStages.map((s) => {
+              const list = aiTopics.filter((t) => t.stage === s.n);
+              return (
+                <li key={s.n} style={{ '--step': (s.n - 1) / (aiStages.length - 1) } as React.CSSProperties}>
+                  <span className="ai-stages__n">{s.n}</span>
+                  <div>
+                    <b>{s.name}</b>
+                    <div className="muted">
+                      {s.description} {list.length} termos, do {orderOf.get(list[0].id)} ao {orderOf.get(list[list.length - 1].id)}.
+                    </div>
                   </div>
-                </div>
+                </li>
+              );
+            })}
+          </ol>
+          <Section title="Como usar">
+            <ul className="howto">
+              <li>Clique num termo: acende a trilha inteira de pré-requisitos até ele e o que ele destrava em seguida.</li>
+              <li>Setas sólidas vão do pré-requisito para quem depende dele; tracejadas ligam termos relacionados sem ordem.</li>
+              <li>
+                <b>Trilha</b> mostra uma coluna por etapa; <b>Por área</b> agrupa pelos capítulos do livro.
               </li>
-            );
-          })}
-        </ol>
-        <Section title="Como usar">
-          <ul className="howto">
-            <li>Clique num termo: acende a trilha inteira de pré-requisitos até ele e o que ele destrava em seguida.</li>
-            <li>Setas sólidas vão do pré-requisito para quem depende dele; tracejadas ligam termos relacionados sem ordem.</li>
-            <li>
-              <b>Trilha</b> mostra uma coluna por etapa; <b>Por área</b> agrupa pelos capítulos do livro.
-            </li>
-            <li>
-              <span className="badge ai-recent">novo</span> marca termos que surgiram depois do livro e não têm capítulo próprio.
-            </li>
-          </ul>
-        </Section>
+              <li>
+                <span className="badge ai-recent">novo</span> marca termos que surgiram depois do livro e não têm capítulo próprio.
+              </li>
+            </ul>
+          </Section>
+        </PanelHelp>
       </aside>
     );
   }

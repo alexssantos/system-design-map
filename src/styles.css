@@ -694,3 +694,205 @@ body {
   align-items: center;
   gap: var(--space-1);
 }
+
+/* ───── Barra do topo: controles e botão de filtros (celular) ───── */
+.toolbar__tools {
+  display: contents;
+}
+
+.toolbar__end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toolbar .toolbar__more {
+  display: none;
+}
+
+/* ───── "Como usar" recolhível ───── */
+.panel__help > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  list-style: none;
+  cursor: pointer;
+}
+
+.panel__help > summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel__help > summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-right: 2px solid var(--color-text-2);
+  border-bottom: 2px solid var(--color-text-2);
+  transform: rotate(45deg);
+  transition: transform var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.panel__help[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.panel__help-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* ───── Foco no mapa e botões de esconder ───── */
+.canvas {
+  position: relative;
+}
+
+.canvas-controls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 5;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.shell.is-focus .sidenav,
+.shell.is-focus .toolbar {
+  display: none;
+}
+
+.sidenav__collapse {
+  margin-top: auto;
+  align-self: flex-end;
+}
+
+@media (min-width: 901px) {
+  .shell.is-nav-collapsed .sidenav {
+    width: 64px;
+    align-items: center;
+  }
+
+  .shell.is-nav-collapsed .sidenav__avatar {
+    align-self: center;
+    margin-left: 0;
+  }
+
+  .shell.is-nav-collapsed .sidenav__label,
+  .shell.is-nav-collapsed .sidenav__item span {
+    display: none;
+  }
+
+  .shell.is-nav-collapsed .sidenav__item {
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .shell.is-nav-collapsed .sidenav__collapse {
+    align-self: center;
+  }
+}
+
+/* ───── Celular: o mapa ocupa a tela; controles e ajuda ficam recolhidos ───── */
+@media (max-width: 900px) {
+  .sidenav {
+    gap: var(--space-2);
+    padding: 6px var(--space-3);
+  }
+
+  .sidenav .tl-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .sidenav__item {
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .sidenav__list {
+    gap: 4px;
+  }
+
+  .sidenav .sidenav__collapse {
+    display: none;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .toolbar .brand {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toolbar .brand strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toolbar .toolbar__more {
+    display: inline-flex;
+  }
+
+  .toolbar__tools {
+    display: none;
+  }
+
+  .toolbar[data-open] .toolbar__tools {
+    order: 3;
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: var(--space-2) 0 var(--space-1);
+  }
+
+  .toolbar[data-open] .toolbar__search {
+    flex: none;
+    max-width: none;
+  }
+
+  .toolbar[data-open] .toolbar__tools > .tl-seg {
+    align-self: flex-start;
+  }
+
+  .toolbar__hint {
+    display: none !important;
+  }
+
+  .canvas {
+    min-height: 0;
+  }
+
+  .canvas-controls {
+    top: var(--space-2);
+    right: var(--space-2);
+  }
+
+  .panel {
+    max-height: 55%;
+    padding: var(--space-4) var(--space-4) var(--space-6);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 0.25);
+  }
+
+  .panel.is-empty {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .panel.is-empty h2 {
+    font-size: var(--font-size-title);
+  }
+}

@@ -15,6 +15,8 @@ import { nodeTypes } from './components/nodes';
 import { diagramByCase } from './diagrams/data';
 import { exportFlowImage, runExport, type ImageFormat } from './export/flowImage';
 import { FormatPicker } from './components/FormatPicker';
+import { Toolbar } from './components/Toolbar';
+import { CanvasControls, LayoutProvider, useLayout } from './components/LayoutControls';
 import { Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
 import { AiMapView } from './ai/AiMapView';
 import { SideNav, type Page } from './components/SideNav';
@@ -95,6 +97,8 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
   const [format, setFormat] = useState<ImageFormat>('png');
   const canvasRef = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
+  const { focus: focusMode, panelHidden, setPanelHidden } = useLayout();
+  const showPanel = !focusMode && !panelHidden;
 
   const focus = hovered ?? selected;
   const neighbors = useMemo(() => (focus ? neighborsOf(focus) : null), [focus]);
@@ -204,11 +208,12 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
     (id: string) => {
       setSelected(id);
       setHovered(null);
+      setPanelHidden(false);
       // Enquadra o item e todas as conexões dele, para ver o "bairro" inteiro de uma vez.
       const ids = [id, ...neighborsOf(id)].map((n) => ({ id: n }));
       flow.fitView({ nodes: ids, duration: 500, padding: 0.15, maxZoom: 1.1 });
     },
-    [flow],
+    [flow, setPanelHidden],
   );
 
   const exportMap = (which: 'all' | 'selection') => {
@@ -231,15 +236,18 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
 
   return (
     <div className="app">
-      <header className="toolbar">
-        <div className="brand">
-          <div>
-            <strong>Mapa de System Design</strong>
-            <span className="muted">
-              {topics.length} tópicos · {cases.length} casos · {diagramByCase.size} diagramas
-            </span>
-          </div>
-        </div>
+      <Toolbar
+        title="Mapa de System Design"
+        subtitle={<>{topics.length} tópicos · {cases.length} casos · {diagramByCase.size} diagramas</>}
+        end={
+          <IconButton
+            icon={theme === 'dark' ? 'sun' : 'moon'}
+            label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+            variant="soft"
+            onClick={toggleTheme}
+          />
+        }
+      >
         <TextField
           className="toolbar__search"
           value={query}
@@ -262,7 +270,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           <Switch checked={showPatterns} onChange={setShowPatterns} label="Padrões" />
           <Switch checked={showAllEdges} onChange={setShowAllEdges} label="Todas as conexões" />
         </div>
-        <Badge tone="accent" dot>
+        <Badge tone="accent" dot className="toolbar__hint">
           Clique duplo num caso abre o diagrama
         </Badge>
         <div className="toolbar__downloads" role="group" aria-label="Baixar imagem">
@@ -290,15 +298,10 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
             Mapa inteiro
           </Button>
         </div>
-        <IconButton
-          icon={theme === 'dark' ? 'sun' : 'moon'}
-          label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-          variant="soft"
-          onClick={toggleTheme}
-        />
-      </header>
+      </Toolbar>
       <div className="body">
         <div className="canvas" ref={canvasRef}>
+          <CanvasControls />
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -320,6 +323,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
+        {showPanel && (
         <DetailPanel
           id={selected}
           levelFocus={levelFocus}
@@ -327,6 +331,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           onClose={() => setSelected(null)}
           onOpenDiagram={(caseId, version) => setDiagramFor({ caseId, version })}
         />
+        )}
       </div>
       <DiagramModal caseId={diagramFor?.caseId ?? null} version={diagramFor?.version} theme={theme} onClose={() => setDiagramFor(null)} />
     </div>
@@ -339,12 +344,21 @@ export default function App() {
   if (route.page === 'diagram')
     return <DiagramPage key={`${route.caseId}@${route.version ?? ''}`} caseId={route.caseId} version={route.version} theme={theme} toggleTheme={toggleTheme} />;
   return (
-    <div className="shell">
-      <SideNav page={route.page} />
+    <LayoutProvider>
+      <Shell page={route.page} theme={theme} toggleTheme={toggleTheme} />
+    </LayoutProvider>
+  );
+}
+
+function Shell({ page, theme, toggleTheme }: { page: Page; theme: Theme; toggleTheme: () => void }) {
+  const { focus, navCollapsed } = useLayout();
+  return (
+    <div className={`shell${focus ? ' is-focus' : ''}${navCollapsed ? ' is-nav-collapsed' : ''}`}>
+      <SideNav page={page} />
       <main className="shell__main">
         {/* Cada página tem o próprio provider: zoom e seleção não vazam de um mapa para o outro. */}
-        <ReactFlowProvider key={route.page}>
-          {route.page === 'ai' ? <AiMapView theme={theme} toggleTheme={toggleTheme} /> : <MapView theme={theme} toggleTheme={toggleTheme} />}
+        <ReactFlowProvider key={page}>
+          {page === 'ai' ? <AiMapView theme={theme} toggleTheme={toggleTheme} /> : <MapView theme={theme} toggleTheme={toggleTheme} />}
         </ReactFlowProvider>
       </main>
     </div>

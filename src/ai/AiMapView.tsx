@@ -2,6 +2,8 @@ import { Background, Controls, MarkerType, ReactFlow, useReactFlow, type Edge, t
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FormatPicker } from '../components/FormatPicker';
 import { TextField } from '../components/kit/TextField';
+import { Toolbar } from '../components/Toolbar';
+import { CanvasControls, useLayout } from '../components/LayoutControls';
 import { exportFlowImage, runExport, type ImageFormat } from '../export/flowImage';
 import { NODE_H, NODE_W } from '../layout';
 import type { Theme } from '../theme';
@@ -30,6 +32,8 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
   const [format, setFormat] = useState<ImageFormat>('png');
   const canvasRef = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
+  const { focus: focusMode, panelHidden, setPanelHidden } = useLayout();
+  const showPanel = !focusMode && !panelHidden;
   const layout = aiLayouts[view];
 
   const focus = hovered ?? selected;
@@ -124,11 +128,12 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
     (id: string) => {
       setSelected(id);
       setHovered(null);
+      setPanelHidden(false);
       const s = focusSets(id);
       const ids = [id, ...s.path, ...s.next].map((n) => ({ id: n }));
       flow.fitView({ nodes: ids, duration: 500, padding: 0.15, maxZoom: 1.1 });
     },
-    [flow],
+    [flow, setPanelHidden],
   );
 
   const exportMap = (which: 'all' | 'selection') => {
@@ -152,15 +157,18 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
 
   return (
     <div className="app">
-      <header className="toolbar">
-        <div className="brand">
-          <div>
-            <strong>Mapa de Engenharia de AI</strong>
-            <span className="muted">
-              {aiTopics.length} termos · {aiGroups.length} áreas · {aiStages.length} etapas de estudo
-            </span>
-          </div>
-        </div>
+      <Toolbar
+        title="Mapa de Engenharia de AI"
+        subtitle={<>{aiTopics.length} termos · {aiGroups.length} áreas · {aiStages.length} etapas de estudo</>}
+        end={
+          <IconButton
+            icon={theme === 'dark' ? 'sun' : 'moon'}
+            label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+            variant="soft"
+            onClick={toggleTheme}
+          />
+        }
+      >
         <TextField className="toolbar__search" value={query} onChange={setQuery} label="Buscar no mapa" placeholder="Buscar termo…" />
         <SegmentedControl
           label="Organizar por"
@@ -174,7 +182,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
         <div className="toolbar__switches">
           <Switch checked={showAllEdges} onChange={setShowAllEdges} label="Todas as conexões" />
         </div>
-        <Badge tone="accent" dot>
+        <Badge tone="accent" dot className="toolbar__hint">
           Clique num termo para ver a trilha até ele
         </Badge>
         <div className="toolbar__downloads" role="group" aria-label="Baixar imagem">
@@ -202,15 +210,10 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
             Mapa inteiro
           </Button>
         </div>
-        <IconButton
-          icon={theme === 'dark' ? 'sun' : 'moon'}
-          label={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
-          variant="soft"
-          onClick={toggleTheme}
-        />
-      </header>
+      </Toolbar>
       <div className="body">
         <div className="canvas" ref={canvasRef}>
+          <CanvasControls />
           <ReactFlow
             key={view}
             nodes={nodes}
@@ -232,7 +235,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
-        <AiPanel id={selected} onSelect={select} onClose={() => setSelected(null)} />
+        {showPanel && <AiPanel id={selected} onSelect={select} onClose={() => setSelected(null)} />}
       </div>
     </div>
   );

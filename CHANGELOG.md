@@ -10,6 +10,20 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.7.0] - 2026-10-31
+
+### Adicionado
+
+- Modo foco: o botão de mira no canto do mapa esconde o menu lateral, o cabeçalho e o painel e deixa só o mapa na tela. Esc ou o X saem do foco.
+- Botão para esconder e mostrar o painel de detalhes, ao lado do botão de foco. Selecionar um item mostra o painel de novo.
+- Botão para recolher o menu lateral (só os ícones), lembrado entre visitas.
+- O mapa se reenquadra sozinho quando o espaço muda (foco, painel ou menu).
+
+### Alterado
+
+- Layout no celular: o cabeçalho mostra só o título, o botão de filtros e o tema. Busca, filtros e downloads abrem no botão de filtros. O "Como usar" vira uma barra recolhida no rodapé, e o painel de detalhes vira uma gaveta inferior, deixando o mapa com a maior parte da tela.
+- Menu do topo no celular mais compacto, sem quebrar os nomes das páginas.
+
 ## [0.6.0] - 2026-10-31
 
 ### Adicionado
@@ -107,7 +121,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.6.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/alexssantos/system-design-map/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/alexssantos/system-design-map/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/alexssantos/system-design-map/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/alexssantos/system-design-map/compare/v0.3.0...v0.4.0
