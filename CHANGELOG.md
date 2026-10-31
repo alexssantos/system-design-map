@@ -10,6 +10,19 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.6.0] - 2026-10-31
+
+### Adicionado
+
+- Menu lateral que separa as páginas **System Design** (`#/`) e **Engenharia de AI** (`#/ai`). A foto do GitHub com o pulse foi para o topo do menu.
+- Mapa de Engenharia de AI com 68 termos do livro *AI Engineering* (Chip Huyen), em 9 áreas (fundamentos de modelos, avaliação, prompting e contexto, RAG, agentes, ajuste fino, dados, inferência, arquitetura e produção), cada um com a definição de uma linha, o capítulo e uma linha "Na prática".
+- Trilha de estudo em 7 etapas, da primeira aplicação até a escala: tokens e contexto, prompting, RAG e embeddings, evals, agentes e ferramentas, ajuste fino e dados e, por fim, inferência e produção. Cada termo tem um número de 1 (primeiro a aprender) a 68 (último).
+- Pré-requisitos entre os termos, desenhados como setas. Ao clicar num termo, acendem todos os pré-requisitos (diretos e indiretos) e o que ele destrava; o painel lista a trilha completa até ele, na ordem.
+- Duas vistas: **Trilha** (uma coluna por etapa) e **Por área** (agrupado pelos capítulos).
+- Termos que surgiram depois do livro (engenharia de contexto, harness, MCP, multiagente, computer use, modelos de raciocínio) aparecem marcados como **novo**.
+- Busca, **Todas as conexões** e downloads em PNG ou SVG animado (mapa inteiro ou trilha do termo selecionado) também na página de AI.
+- Testes do mapa de AI: pré-requisitos sempre antes na trilha e nunca numa etapa posterior (sem ciclos), sem pré-requisito redundante e os 68 termos presentes.
+
 ## [0.5.0] - 2026-10-29
 
 ### Adicionado
@@ -94,7 +107,9 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.4.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/alexssantos/system-design-map/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/alexssantos/system-design-map/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/alexssantos/system-design-map/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/alexssantos/system-design-map/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/alexssantos/system-design-map/compare/v0.2.0...v0.2.1

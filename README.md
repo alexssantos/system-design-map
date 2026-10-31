@@ -13,6 +13,20 @@ A base de conteúdo é o board **Roadmap de System Design** no Miro (12 temas e 
 - **Foco senior** apaga o que só costuma ser cobrado de staff. **Foco staff** destaca a expectativa de staff no painel.
 - A busca ignora acentos e procura em títulos e resumos.
 
+## Mapa de Engenharia de AI
+
+O menu lateral separa as duas páginas: **System Design** (`#/`) e **Engenharia de AI** (`#/ai`).
+
+O mapa de AI tem 68 termos do livro *AI Engineering* (Chip Huyen), em 9 áreas que seguem os capítulos 2 a 10, mais os termos que surgiram depois do livro (marcados como **novo**).
+
+- Cada card tem um número: a posição na trilha de estudo (1 é o primeiro a aprender, 68 o último).
+- **Trilha** mostra uma coluna por etapa: tokens e contexto, prompting, RAG e embeddings, evals, agentes e ferramentas, ajuste fino e dados e, por fim, inferência e produção. **Por área** agrupa pelos capítulos.
+- Clique num termo: acendem todos os pré-requisitos, diretos e indiretos, e o que ele destrava. O painel lista a trilha completa até ele, na ordem.
+- Setas sólidas vão do pré-requisito para quem depende dele; linhas tracejadas ligam termos relacionados sem ordem.
+- Os downloads (PNG ou SVG animado) baixam o mapa inteiro ou a trilha do termo selecionado.
+
+Para incluir um termo, adicione-o em `src/ai/topics.ts` na posição da trilha onde ele deve ser estudado, com `stage` e `prereqs`. Os testes falham se um pré-requisito vier depois do termo, se estiver numa etapa posterior ou se já vier por outro pré-requisito.
+
 ## Diagramas de arquitetura
 
 Cada caso tem um diagrama animado: abra pelo botão **Ver diagrama de arquitetura** no painel, com clique duplo no card do caso ou direto em `#/diagrama/<caso>` (o ícone no canto do modal abre em guia nova).
@@ -61,6 +75,7 @@ src/
     data.ts       # os 15 diagramas
     icons.tsx     # ícone animado por tipo de componente
     DiagramView.tsx # canvas do diagrama (React Flow)
+  ai/             # mapa de Engenharia de AI: áreas, etapas, termos em ordem de estudo, layout e página
   podcasts/       # roteiros e tempos dos episódios (o mp3 fica em public/podcasts)
   components/     # cards do grafo, painel de detalhes, modal do diagrama, painel do podcast
     kit/          # componentes novos no estilo do Transly UI Kit
