@@ -2,6 +2,7 @@ import {
   Background,
   Controls,
   ReactFlow,
+  MarkerType,
   ReactFlowProvider,
   useReactFlow,
   type Edge,
@@ -16,7 +17,8 @@ import { diagramByCase } from './diagrams/data';
 import { exportFlowImage, runExport, type ImageFormat } from './export/flowImage';
 import { FormatPicker } from './components/FormatPicker';
 import { Toolbar } from './components/Toolbar';
-import { CanvasControls, LayoutProvider, useLayout } from './components/LayoutControls';
+import { edgeTypes } from './components/HaloEdge';
+import { CanvasControls, LayoutProvider, frameItem, useLayout } from './components/LayoutControls';
 import { Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
 import { AiMapView } from './ai/AiMapView';
 import { SideNav, type Page } from './components/SideNav';
@@ -193,10 +195,13 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
           id: e.id,
           source: e.source,
           target: e.target,
+          type: 'halo',
+          data: { color, dot: active && e.kind === 'applied' },
           animated: active && e.kind === 'applied',
+          markerEnd: e.kind === 'applied' && active ? { type: MarkerType.ArrowClosed, color, width: 16, height: 16 } : undefined,
           style: {
             stroke: e.kind === 'applied' ? color : 'var(--color-text-2)',
-            strokeWidth: active ? 2 : 1,
+            strokeWidth: active ? 2.4 : 1,
             strokeDasharray: e.kind === 'related' ? '6 4' : undefined,
             opacity: active ? 0.9 : 0.25,
           },
@@ -210,8 +215,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
       setHovered(null);
       setPanelHidden(false);
       // Enquadra o item e todas as conexões dele, para ver o "bairro" inteiro de uma vez.
-      const ids = [id, ...neighborsOf(id)].map((n) => ({ id: n }));
-      flow.fitView({ nodes: ids, duration: 500, padding: 0.15, maxZoom: 1.1 });
+      frameItem(flow, id, [id, ...neighborsOf(id)]);
     },
     [flow, setPanelHidden],
   );
@@ -301,11 +305,12 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
       </Toolbar>
       <div className="body">
         <div className="canvas" ref={canvasRef}>
-          <CanvasControls />
+          <CanvasControls fitIds={selected ? [selected, ...neighborsOf(selected)] : undefined} />
           <ReactFlow
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={(_, n) => (n.type === 'topic' || n.type === 'case') && select(n.id)}
             onNodeDoubleClick={(_, n) => n.type === 'case' && setDiagramFor({ caseId: n.id })}
             zoomOnDoubleClick={false}

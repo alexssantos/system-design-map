@@ -3,7 +3,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { FormatPicker } from '../components/FormatPicker';
 import { TextField } from '../components/kit/TextField';
 import { Toolbar } from '../components/Toolbar';
-import { CanvasControls, useLayout } from '../components/LayoutControls';
+import { edgeTypes } from '../components/HaloEdge';
+import { CanvasControls, frameItem, useLayout } from '../components/LayoutControls';
 import { exportFlowImage, runExport, type ImageFormat } from '../export/flowImage';
 import { NODE_H, NODE_W } from '../layout';
 import type { Theme } from '../theme';
@@ -37,6 +38,11 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
   const layout = aiLayouts[view];
 
   const focus = hovered ?? selected;
+  const selectedFit = useMemo(() => {
+    if (!selected) return undefined;
+    const s = focusSets(selected);
+    return [selected, ...s.path, ...s.next];
+  }, [selected]);
   const sets = useMemo(() => (focus ? focusSets(focus) : null), [focus]);
 
   const matches = useMemo(() => {
@@ -112,11 +118,13 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
           source: e.source,
           target: e.target,
           ...handles,
+          type: 'halo',
+          data: { color, dot: prereq && active },
           animated: active && prereq,
-          markerEnd: prereq ? { type: MarkerType.ArrowClosed, color, width: 16, height: 16 } : undefined,
+          markerEnd: prereq ? { type: MarkerType.ArrowClosed, color, width: 18, height: 18 } : undefined,
           style: {
             stroke: prereq ? color : 'var(--color-text-2)',
-            strokeWidth: active ? (isNext ? 1.5 : 2.2) : 1,
+            strokeWidth: active ? (isNext ? 1.8 : 2.6) : 1.2,
             strokeDasharray: prereq ? undefined : '6 4',
             opacity: active ? (isNext ? 0.6 : 0.95) : 0.3,
           },
@@ -130,8 +138,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
       setHovered(null);
       setPanelHidden(false);
       const s = focusSets(id);
-      const ids = [id, ...s.path, ...s.next].map((n) => ({ id: n }));
-      flow.fitView({ nodes: ids, duration: 500, padding: 0.15, maxZoom: 1.1 });
+      frameItem(flow, id, [id, ...s.path, ...s.next]);
     },
     [flow, setPanelHidden],
   );
@@ -213,12 +220,13 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
       </Toolbar>
       <div className="body">
         <div className="canvas" ref={canvasRef}>
-          <CanvasControls />
+          <CanvasControls fitIds={selectedFit} />
           <ReactFlow
             key={view}
             nodes={nodes}
             edges={edges}
             nodeTypes={aiNodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={(_, n) => n.type?.startsWith('ai') && n.type !== 'aiGroup' && select(n.id)}
             onNodeMouseEnter={(_, n) => (n.type === 'aiTrail' || n.type === 'aiArea') && setHovered(n.id)}
             onNodeMouseLeave={() => setHovered(null)}

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, type ReactFlowInstance } from '@xyflow/react';
 import { IconButton } from '../ui-kit';
 
 interface LayoutState {
@@ -12,6 +12,22 @@ interface LayoutState {
   /** Painel de detalhes escondido. */
   panelHidden: boolean;
   setPanelHidden: (v: boolean) => void;
+}
+
+/**
+ * Enquadra um item e as conexões dele. No celular a tela é estreita demais para caber o bairro inteiro com texto
+ * legível, então centraliza o item num zoom de leitura e o resto se acompanha arrastando pelas linhas.
+ */
+export function frameItem(flow: ReactFlowInstance, id: string, ids: string[]) {
+  const mobile = window.matchMedia('(max-width: 900px)').matches;
+  const node = flow.getNode(id);
+  if (mobile && node) {
+    const w = node.measured?.width ?? node.width ?? 0;
+    const h = node.measured?.height ?? node.height ?? 0;
+    flow.setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: 0.95, duration: 500 });
+    return;
+  }
+  flow.fitView({ nodes: ids.map((n) => ({ id: n })), duration: 500, padding: 0.15, maxZoom: 1.1 });
 }
 
 const Ctx = createContext<LayoutState | null>(null);
@@ -69,12 +85,19 @@ export function useLayout(): LayoutState {
 }
 
 /** Botões flutuantes no canto do mapa: modo foco e mostrar/esconder o painel. */
-export function CanvasControls({ hasPanel = true }: { hasPanel?: boolean }) {
+/** `fitIds`: o que enquadrar quando o espaço muda (o item selecionado e as conexões); sem ele, o mapa inteiro. */
+export function CanvasControls({ hasPanel = true, fitIds }: { hasPanel?: boolean; fitIds?: string[] }) {
   const { focus, toggleFocus, panelHidden, setPanelHidden, navCollapsed } = useLayout();
   const flow = useReactFlow();
   // Quando o espaço do canvas muda, reenquadra o mapa depois que o layout assenta.
+  const fitRef = useRef(fitIds);
+  fitRef.current = fitIds;
   const refit = useCallback(() => {
-    window.setTimeout(() => flow.fitView({ duration: 300, padding: 0.08 }), 60);
+    window.setTimeout(() => {
+      const ids = fitRef.current;
+      if (ids?.length) frameItem(flow, ids[0], ids);
+      else flow.fitView({ duration: 300, padding: 0.08 });
+    }, 60);
   }, [flow]);
   const first = useRef(true);
   useEffect(() => {

@@ -23,6 +23,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 - Layout no celular: o cabeçalho mostra só o título, o botão de filtros e o tema. Busca, filtros e downloads abrem no botão de filtros. O "Como usar" vira uma barra recolhida no rodapé, e o painel de detalhes vira uma gaveta inferior, deixando o mapa com a maior parte da tela.
 - Menu do topo no celular mais compacto, sem quebrar os nomes das páginas.
+- Conexões mais fáceis de seguir nos dois mapas: cada linha tem um contorno da cor do fundo, um ponto na saída e uma seta maior na chegada, e se curva mais longe das caixas. Na Trilha, as setas entre termos da mesma etapa fazem um arco largo por fora da coluna, e os cards ficaram mais espaçados.
+- No celular, tocar num item centraliza ele num zoom de leitura em vez de encolher o mapa para caber todas as conexões.
 
 ## [0.6.0] - 2026-10-31
 
