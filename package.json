@@ -1,7 +1,7 @@
 {
   "name": "system-design-map",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Mapa visual de system design e design patterns para preparação de entrevistas (senior e staff).",
   "scripts": {

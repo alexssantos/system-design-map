@@ -1,4 +1,5 @@
-import { Avatar, Icon } from '../ui-kit';
+import { Avatar, Icon, IconButton } from '../ui-kit';
+import { useLayout } from './LayoutControls';
 import { RobotIcon } from './kit/RobotIcon';
 
 export type Page = 'system-design' | 'ai';
@@ -14,6 +15,7 @@ const items: { page: Page; icon: string; label: string; hint: string }[] = [
 
 /** Menu lateral que separa as páginas de mapa. A foto do GitHub fica no topo, com o pulse. */
 export function SideNav({ page }: { page: Page }) {
+  const { navCollapsed, toggleNav } = useLayout();
   return (
     <nav className="sidenav" aria-label="Mapas">
       <a
@@ -34,7 +36,8 @@ export function SideNav({ page }: { page: Page }) {
               className="sidenav__item tl-animhost"
               href={pageHref[it.page]}
               aria-current={page === it.page ? 'page' : undefined}
-              title={it.hint}
+              title={navCollapsed ? `${it.label}: ${it.hint}` : it.hint}
+              aria-label={it.label}
             >
               {it.icon === 'robot' ? <RobotIcon size={20} /> : <Icon name={it.icon} size={20} />}
               <span>{it.label}</span>
@@ -42,6 +45,13 @@ export function SideNav({ page }: { page: Page }) {
           </li>
         ))}
       </ul>
+      <IconButton
+        className="sidenav__collapse"
+        icon={navCollapsed ? 'chevron-right' : 'chevron-left'}
+        label={navCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        size="sm"
+        onClick={toggleNav}
+      />
     </nav>
   );
 }

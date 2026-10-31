@@ -1,5 +1,6 @@
 import { caseById, getItem, groupById, relatedOf, topicById, topicsByCase } from '../data/graph';
 import { useState } from 'react';
+import { PanelHelp } from './Toolbar';
 import type { CaseEstimates, Level } from '../data/types';
 import { diagramVersions, versionOf } from '../diagrams/data';
 import { audioVersions } from '../podcasts';
@@ -112,17 +113,18 @@ export function DetailPanel({ id, levelFocus, onSelect, onClose, onOpenDiagram }
 
   if (!item) {
     return (
-      <aside className="panel">
-        <h2>Como usar</h2>
-        <ul className="howto">
-          <li>Clique num conceito, padrão ou caso para ver o resumo e as conexões.</li>
-          <li>As linhas coloridas e animadas levam aos casos; as tracejadas, a tópicos relacionados.</li>
-          <li>
-            <b>●</b> é conceito, <b>◆</b> é padrão (arquitetura ou código).
-          </li>
-          <li>“Senior” esmaece o que costuma ser cobrado só de staff.</li>
-          <li>Num caso, abra o diagrama de arquitetura animado (ou dê clique duplo no card).</li>
-        </ul>
+      <aside className="panel is-empty">
+        <PanelHelp title="Como usar">
+          <ul className="howto">
+            <li>Clique num conceito, padrão ou caso para ver o resumo e as conexões.</li>
+            <li>As linhas coloridas e animadas levam aos casos; as tracejadas, a tópicos relacionados.</li>
+            <li>
+              <b>●</b> é conceito, <b>◆</b> é padrão (arquitetura ou código).
+            </li>
+            <li>“Senior” esmaece o que costuma ser cobrado só de staff.</li>
+            <li>Num caso, abra o diagrama de arquitetura animado (ou dê clique duplo no card).</li>
+          </ul>
+        </PanelHelp>
       </aside>
     );
   }

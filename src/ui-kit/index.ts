@@ -67,6 +67,7 @@ export const IconButton = _IconButton as unknown as ComponentType<{
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  title?: string;
 }>;
 
 export const Badge = _Badge as unknown as ComponentType<Base & { tone?: Tone; solid?: boolean; dot?: boolean; pulse?: boolean }>;

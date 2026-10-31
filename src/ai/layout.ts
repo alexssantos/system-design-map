@@ -20,7 +20,9 @@ const PAD = 18;
 const GAP_X = 16;
 const GAP_Y = 12;
 const STAGE_HEADER = 92;
-const STAGE_GAP = 104;
+const STAGE_GAP = 128;
+/** Espaço entre tópicos da mesma etapa: dá para ver as setas chegando em cada caixa. */
+const TRAIL_GAP_Y = 22;
 const GROUP_HEADER = 64;
 const GROUP_COLS = 2;
 const GRID_COLS = 3;
@@ -37,13 +39,13 @@ function trail(): AiLayout {
   const containers: AiLayout['containers'] = [];
   const nodes = new Map<string, { x: number; y: number }>();
   const tallest = Math.max(...aiStages.map((s) => aiTopics.filter((t) => t.stage === s.n).length));
-  const h = STAGE_HEADER + tallest * (NODE_H + GAP_Y) - GAP_Y + PAD;
+  const h = STAGE_HEADER + tallest * (NODE_H + TRAIL_GAP_Y) - TRAIL_GAP_Y + PAD;
   aiStages.forEach((s, col) => {
     const x = col * (STAGE_W + STAGE_GAP);
     containers.push({ id: `band:stage-${s.n}`, box: { x, y: 0, w: STAGE_W, h } });
     aiTopics
       .filter((t) => t.stage === s.n)
-      .forEach((t, i) => nodes.set(t.id, { x: x + PAD, y: STAGE_HEADER + i * (NODE_H + GAP_Y) }));
+      .forEach((t, i) => nodes.set(t.id, { x: x + PAD, y: STAGE_HEADER + i * (NODE_H + TRAIL_GAP_Y) }));
   });
   return { containers, nodes };
 }
