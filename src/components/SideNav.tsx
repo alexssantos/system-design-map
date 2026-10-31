@@ -1,4 +1,5 @@
 import { Avatar, Icon } from '../ui-kit';
+import { RobotIcon } from './kit/RobotIcon';
 
 export type Page = 'system-design' | 'ai';
 
@@ -8,7 +9,7 @@ export const pageHref: Record<Page, string> = { 'system-design': '#/', ai: '#/ai
 
 const items: { page: Page; icon: string; label: string; hint: string }[] = [
   { page: 'system-design', icon: 'grid', label: 'System Design', hint: 'Conceitos, padrões e os 15 casos de estudo' },
-  { page: 'ai', icon: 'sparkles', label: 'Engenharia de AI', hint: 'Termos do livro AI Engineering, em ordem de estudo' },
+  { page: 'ai', icon: 'robot', label: 'Engenharia de AI', hint: 'Termos do livro AI Engineering, em ordem de estudo' },
 ];
 
 /** Menu lateral que separa as páginas de mapa. A foto do GitHub fica no topo, com o pulse. */
@@ -25,6 +26,7 @@ export function SideNav({ page }: { page: Page }) {
       >
         <Avatar name={GITHUB_USER} src={`https://github.com/${GITHUB_USER}.png?size=96`} size={34} />
       </a>
+      <div className="sidenav__label">Mapas</div>
       <ul className="sidenav__list">
         {items.map((it) => (
           <li key={it.page}>
@@ -34,7 +36,7 @@ export function SideNav({ page }: { page: Page }) {
               aria-current={page === it.page ? 'page' : undefined}
               title={it.hint}
             >
-              <Icon name={it.icon} size={20} />
+              {it.icon === 'robot' ? <RobotIcon size={20} /> : <Icon name={it.icon} size={20} />}
               <span>{it.label}</span>
             </a>
           </li>

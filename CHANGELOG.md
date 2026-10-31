@@ -14,7 +14,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Adicionado
 
-- Menu lateral que separa as páginas **System Design** (`#/`) e **Engenharia de AI** (`#/ai`). A foto do GitHub com o pulse foi para o topo do menu.
+- Menu lateral que separa as páginas **System Design** (`#/`) e **Engenharia de AI** (`#/ai`), no padrão de sidebar: ícone à esquerda do nome e item ativo com barra de destaque. A página de AI usa um ícone de robô (agente), com olhos que piscam no hover. A foto do GitHub com o pulse foi para o topo do menu. No celular o menu vira uma barra no topo.
 - Mapa de Engenharia de AI com 68 termos do livro *AI Engineering* (Chip Huyen), em 9 áreas (fundamentos de modelos, avaliação, prompting e contexto, RAG, agentes, ajuste fino, dados, inferência, arquitetura e produção), cada um com a definição de uma linha, o capítulo e uma linha "Na prática".
 - Trilha de estudo em 7 etapas, da primeira aplicação até a escala: tokens e contexto, prompting, RAG e embeddings, evals, agentes e ferramentas, ajuste fino e dados e, por fim, inferência e produção. Cada termo tem um número de 1 (primeiro a aprender) a 68 (último).
 - Pré-requisitos entre os termos, desenhados como setas. Ao clicar num termo, acendem todos os pré-requisitos (diretos e indiretos) e o que ele destrava; o painel lista a trilha completa até ele, na ordem.

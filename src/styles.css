@@ -22,6 +22,7 @@ body {
 }
 
 /* ───── Menu lateral ───── */
+/* Padrão de sidebar: ícone à esquerda do rótulo, itens alinhados à esquerda, item ativo com barra de destaque. */
 .shell {
   display: flex;
   height: 100%;
@@ -35,18 +36,28 @@ body {
 
 .sidenav {
   flex: none;
-  width: 92px;
+  width: 212px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-2);
+  align-items: stretch;
+  gap: var(--space-2);
+  padding: var(--space-3);
   background: var(--color-surface);
   border-right: 1px solid var(--color-line);
 }
 
 .sidenav__avatar {
-  margin-top: 4px;
+  align-self: flex-start;
+  margin: 2px 0 var(--space-3) 6px;
+}
+
+.sidenav__label {
+  padding: 0 10px;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--font-tracking-caps);
+  color: var(--color-text-2);
 }
 
 .sidenav__list {
@@ -54,26 +65,28 @@ body {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--space-2);
-  width: 100%;
+  gap: 2px;
 }
 
 .sidenav__item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  border-radius: var(--radius-md);
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
   color: var(--color-text-2);
-  font-size: 11px;
+  font-size: var(--font-size-small);
   font-weight: var(--font-weight-semibold);
   line-height: 1.2;
-  text-align: center;
   text-decoration: none;
   transition:
     background var(--motion-duration-fast) var(--motion-ease-out),
     color var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.sidenav__item .tl-icon {
+  flex: none;
 }
 
 .sidenav__item:hover {
@@ -95,6 +108,52 @@ body {
   color: var(--palette-lime-800);
 }
 
+/* Robô: olhos piscam e a antena acende no hover do item. */
+.kit-robot__eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.kit-robot__tip {
+  fill: currentColor;
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.tl-animhost:hover .kit-robot__eyes {
+  animation: kit-robot-blink 0.6s var(--motion-ease-out);
+}
+
+.tl-animhost:hover .kit-robot__tip {
+  animation: kit-robot-tip 0.9s ease-in-out;
+}
+
+@keyframes kit-robot-blink {
+  0%,
+  100% {
+    transform: none;
+  }
+  45% {
+    transform: scaleY(0.15);
+  }
+}
+
+@keyframes kit-robot-tip {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-animhost:hover .kit-robot__eyes,
+  .tl-animhost:hover .kit-robot__tip {
+    animation: none;
+  }
+}
+
 @media (max-width: 900px) {
   .shell {
     flex-direction: column;
@@ -109,23 +168,26 @@ body {
   .sidenav {
     width: 100%;
     flex-direction: row;
+    align-items: center;
     padding: var(--space-2) var(--space-3);
     border-right: 0;
     border-bottom: 1px solid var(--color-line);
   }
 
   .sidenav__avatar {
-    margin-top: 0;
+    margin: 0;
+    align-self: center;
+  }
+
+  .sidenav__label {
+    display: none;
   }
 
   .sidenav__list {
     display: flex;
-    width: auto;
   }
 
   .sidenav__item {
-    flex-direction: row;
-    gap: 6px;
     padding: 6px 10px;
   }
 
