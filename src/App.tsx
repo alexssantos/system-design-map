@@ -15,13 +15,14 @@ import { nodeTypes } from './components/nodes';
 import { diagramByCase } from './diagrams/data';
 import { exportFlowImage, runExport, type ImageFormat } from './export/flowImage';
 import { FormatPicker } from './components/FormatPicker';
-import { Avatar, Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
+import { Badge, Button, IconButton, SegmentedControl, Switch } from './ui-kit';
+import { AiMapView } from './ai/AiMapView';
+import { SideNav, type Page } from './components/SideNav';
 import { cases, edges as graphEdges, groupById, groups, neighborsOf, topicById, topics, topicsByCase } from './data/graph';
 import type { Level } from './data/types';
 import type { Theme } from './theme';
 import { CASE_W, NODE_H, NODE_W, computeLayout } from './layout';
 
-const GITHUB_USER = 'alexssantos';
 const isContainer = (id: string) => id.startsWith('group:') || id.startsWith('band:');
 
 type LevelFocus = Level | 'all';
@@ -57,15 +58,24 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))];
 }
 
-/** Rota por hash: #/diagrama/<caso>[/v<n>] abre o diagrama em página própria (guia nova). */
+type Route = { page: 'diagram'; caseId: string; version?: number } | { page: Page };
+
+/**
+ * Rota por hash: #/diagrama/<caso>[/v<n>] abre o diagrama em página própria (guia nova),
+ * #/ai abre o mapa de Engenharia de AI e o resto cai no mapa de System Design.
+ */
+function readRoute(): Route {
+  const hash = window.location.hash;
+  const m = /^#\/diagrama\/([\w-]+)(?:\/v(\d+))?/.exec(hash);
+  if (m) return { page: 'diagram', caseId: m[1], version: m[2] ? Number(m[2]) : undefined };
+  if (/^#\/ai\b/.test(hash)) return { page: 'ai' };
+  return { page: 'system-design' };
+}
+
 function useHashRoute() {
-  const read = () => {
-    const m = /^#\/diagrama\/([\w-]+)(?:\/v(\d+))?/.exec(window.location.hash);
-    return m ? { caseId: m[1], version: m[2] ? Number(m[2]) : undefined } : null;
-  };
-  const [route, setRoute] = useState(read);
+  const [route, setRoute] = useState(readRoute);
   useEffect(() => {
-    const on = () => setRoute(read());
+    const on = () => setRoute(readRoute());
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
@@ -223,16 +233,6 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
     <div className="app">
       <header className="toolbar">
         <div className="brand">
-          <a
-            className="brand__avatar"
-            href={`https://github.com/${GITHUB_USER}`}
-            target="_blank"
-            rel="noreferrer"
-            title={`Perfil de ${GITHUB_USER} no GitHub`}
-            aria-label={`Abrir o perfil de ${GITHUB_USER} no GitHub`}
-          >
-            <Avatar name={GITHUB_USER} src={`https://github.com/${GITHUB_USER}.png?size=96`} size={34} />
-          </a>
           <div>
             <strong>Mapa de System Design</strong>
             <span className="muted">
@@ -336,10 +336,17 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
 export default function App() {
   const [theme, toggleTheme] = useTheme();
   const route = useHashRoute();
-  if (route) return <DiagramPage key={`${route.caseId}@${route.version ?? ''}`} caseId={route.caseId} version={route.version} theme={theme} toggleTheme={toggleTheme} />;
+  if (route.page === 'diagram')
+    return <DiagramPage key={`${route.caseId}@${route.version ?? ''}`} caseId={route.caseId} version={route.version} theme={theme} toggleTheme={toggleTheme} />;
   return (
-    <ReactFlowProvider>
-      <MapView theme={theme} toggleTheme={toggleTheme} />
-    </ReactFlowProvider>
+    <div className="shell">
+      <SideNav page={route.page} />
+      <main className="shell__main">
+        {/* Cada página tem o próprio provider: zoom e seleção não vazam de um mapa para o outro. */}
+        <ReactFlowProvider key={route.page}>
+          {route.page === 'ai' ? <AiMapView theme={theme} toggleTheme={toggleTheme} /> : <MapView theme={theme} toggleTheme={toggleTheme} />}
+        </ReactFlowProvider>
+      </main>
+    </div>
   );
 }
