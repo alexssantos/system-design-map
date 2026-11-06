@@ -59,9 +59,13 @@ export interface DiagramFlow {
   label?: string;
   /** Desenha nos dois sentidos (ex.: WebSocket). */
   both?: boolean;
+  /** Lados de saída e de chegada; sem isso, escolhidos pela posição dos componentes (ex.: para desenhar um ciclo). */
+  sides?: [FlowSide, FlowSide];
   /** Caminho a que o fluxo pertence, para o filtro leitura/escrita; sem caminho = fica fora dos dois. */
   path?: FlowPath;
 }
+
+export type FlowSide = 'top' | 'right' | 'bottom' | 'left';
 
 /** read = redirect (clique), write = criação do link, both = usado pelos dois caminhos. */
 export type FlowPath = 'read' | 'write' | 'both';

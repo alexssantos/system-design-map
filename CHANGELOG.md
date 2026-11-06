@@ -21,6 +21,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
   4. Gateway de LLM da empresa: cota por time, guardrails, cache semântico, roteamento e fallback.
   5. Extração de documentos em lote com saída estruturada, Batch API, validação e revisão humana.
   6. Sistema multiagente de pesquisa com orquestrador, subagentes em paralelo e LLM-as-judge.
+- O loop agêntico tem duas versões do diagrama: a v2 (padrão) desenha o ciclo Perceber → Raciocinar → Agir → Lembrar com o LLM no centro; a v1, o fluxo passo a passo.
 - Diagrama de arquitetura animado para cada caso de IA, no modal ou em guia nova (`#/diagrama/ia-...`), com notas de implementação, alertas e dicas de entrevista. O RAG tem filtro para acender só a pergunta ou só a ingestão.
 - Faixa de casos abaixo do mapa de IA: clicar num caso acende os termos que ele exercita; clique duplo abre o diagrama. O painel do caso traz perguntas de deep dive, projeto para implementar e os termos agrupados por área, com o motivo.
 - No painel de cada termo de IA, a seção "Usado nos casos" mostra onde ele é aplicado; a busca do mapa também acha casos.
@@ -29,6 +30,7 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 ### Alterado
 
 - O filtro de caminho dos diagramas aceita nomes próprios por caso (ex.: "Pergunta" e "Ingestão").
+- Fluxos de diagrama podem fixar os lados de saída e chegada (`sides`), para desenhar ciclos.
 - O contador de diagramas do mapa de System Design conta só os casos dele.
 
 ## [0.7.0] - 2026-10-31

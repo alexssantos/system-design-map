@@ -1,4 +1,4 @@
-import { c, f, n, on } from '../diagrams/helpers';
+import { c, f, n, on, via } from '../diagrams/helpers';
 import type { Diagram } from '../diagrams/types';
 
 /** Diagramas dos casos do mapa de Engenharia de IA (mesmo formato dos casos de System Design). */
@@ -87,6 +87,54 @@ export const aiDiagrams: Diagram[] = [
       n('interview', 'Limites explícitos', 'Diga: máximo de passos, orçamento de tokens, timeout por ferramenta e detecção de loop (mesma chamada 3 vezes). Sem isso o agente gira e gasta.', 0.6, 3.15, 'stop'),
     ],
     zones: [{ label: 'Ferramentas', from: [4.1, 0.25], to: [4.95, 2.95] }],
+  },
+
+  // ─────────────── IA 02 O loop agêntico · v2 (ciclo) ───────────────
+  {
+    caseId: 'ia-loop-agentico',
+    version: 2,
+    headline: 'Um ciclo: perceber, raciocinar, agir e lembrar, com o LLM no centro. Gira até a tarefa acabar ou um limite parar.',
+    changes: [
+      'Desenho em ciclo: Perceber → Raciocinar → Agir → Lembrar → Perceber, com o LLM no centro.',
+      'Cada etapa diz o que o código faz nela; ferramentas, memória, parada e trace ficam do lado de fora do ciclo.',
+      'A saída do ciclo fica explícita: Raciocinar decide se terminou e a parada devolve a resposta ao usuário.',
+    ],
+    components: [
+      c('perceive', 'context', 'Perceber', 2, 0, 'monta o contexto: tarefa + observações'),
+      c('reason', 'agent', 'Raciocinar', 3.5, 1.3, 'pede ferramenta ou responde'),
+      c('act', 'tool', 'Agir', 2, 2.6, 'executa: valida args, timeout'),
+      c('remember', 'ledger', 'Lembrar', 0.5, 1.3, 'grava resultado, resume o velho'),
+      c('llm', 'llm', 'LLM', 2, 1.3, 'o cérebro do ciclo'),
+      c('user', 'client', 'Usuário', 5, 0, 'tarefa + critério de pronto'),
+      c('stop', 'guard', 'Parada', 5, 1.3, 'pronto? 15 passos? orçamento?'),
+      c('search', 'tool', 'Busca', 2, 3.75, 'web ou base interna'),
+      c('orders', 'service', 'API de pedidos', 3.3, 3.75, 'ação com efeito'),
+      c('code', 'sandbox', 'Código', 0.7, 3.75, 'sandbox'),
+      c('state', 'db', 'Memória e checkpoint', -1, 1.3, 'fora do prompt, retomável'),
+      c('trace', 'metrics', 'Trace por volta', -1, 2.6, 'tokens, custo, erro'),
+    ],
+    flows: [
+      via('right', 'top', f('perceive', 'reason', 'sync', '1. contexto')),
+      via('bottom', 'right', f('reason', 'act', 'sync', '2. tool_use')),
+      via('left', 'bottom', f('act', 'remember', 'async', '3. observação')),
+      via('top', 'left', f('remember', 'perceive', 'async', '4. próxima volta')),
+      f('reason', 'llm', 'sync', 'pensa', true),
+      f('user', 'perceive', 'sync', 'tarefa'),
+      f('reason', 'stop', 'sync', 'terminou?'),
+      f('stop', 'user', 'async', 'resposta ou "parei: limite"'),
+      f('act', 'search', 'sync'),
+      f('act', 'orders', 'sync', 'idempotency key'),
+      f('act', 'code', 'sync'),
+      f('remember', 'state', 'async', 'checkpoint'),
+      f('remember', 'trace', 'async', 'span por volta'),
+    ],
+    notes: [
+      n('impl', 'O ciclo em código', 'enquanto não terminou: contexto = perceber(); r = llm(contexto); se r pediu ferramenta: obs = agir(r); lembrar(obs). Senão, devolve r.', -1.1, -0.35, 'perceive'),
+      n('alert', 'Erro vira observação', 'Ferramenta falhou? Devolva o erro legível ("timeout, tente um filtro menor") para Lembrar. O modelo se corrige; uma exceção crua mata a tarefa.', 4.75, 2.55, 'act'),
+      n('alert', 'O contexto cresce a cada volta', 'Lembrar decide o que volta para Perceber: corte resultados grandes, resuma voltas antigas e guarde o bruto fora do prompt, com um id.', -1.15, 3.45, 'remember'),
+      n('interview', 'Limites explícitos', 'Diga: máximo de voltas, orçamento de tokens, timeout por ferramenta e detecção de loop (mesma chamada 3 vezes). Sem isso o ciclo gira e gasta.', 6.2, 0.9, 'stop'),
+    ],
+    zones: [{ label: 'Ferramentas', from: [0.55, 3.6], to: [3.95, 4.5] }],
   },
 
   // ─────────────── IA 03 Agente de código que abre PRs ───────────────

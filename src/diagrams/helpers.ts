@@ -6,6 +6,7 @@ import type {
   DiagramNote,
   FlowKind,
   FlowPath,
+  FlowSide,
   NoteKind,
 } from './types';
 
@@ -38,3 +39,6 @@ export const n = (kind: NoteKind, title: string, text: string, col: number, row:
   target,
 });
 
+
+/** Fluxo com lados fixos de saída e chegada (ex.: arcos de um ciclo). */
+export const via = (from: FlowSide, to: FlowSide, flow: DiagramFlow): DiagramFlow => ({ ...flow, sides: [from, to] });

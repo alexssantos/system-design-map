@@ -168,7 +168,7 @@ function build(d: Diagram) {
   });
 
   const edges: FlowEdgeT[] = d.flows.map((f, i) => {
-    const [s, t] = pickSides(boxes.get(f.from)!, boxes.get(f.to)!);
+    const [s, t] = f.sides ?? pickSides(boxes.get(f.from)!, boxes.get(f.to)!);
     return {
       id: `f-${i}`,
       type: 'flow',
