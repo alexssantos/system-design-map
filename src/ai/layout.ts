@@ -1,5 +1,5 @@
 import { NODE_H, NODE_W } from '../layout';
-import { aiGroups, aiStages, aiTopics } from './graph';
+import { aiCases, aiGroups, aiStages, aiTopics } from './graph';
 
 export type AiView = 'trilha' | 'areas';
 
@@ -14,6 +14,33 @@ export interface AiLayout {
   /** Fundos: colunas das etapas (trilha) ou caixas das áreas. */
   containers: { id: string; box: Box }[];
   nodes: Map<string, { x: number; y: number }>;
+  /** Faixa dos casos de estudo, abaixo de tudo. */
+  casesBand: Box;
+  caseW: number;
+}
+
+export const AI_CASE_H = NODE_H + 18;
+const CASES_HEADER = 64;
+const CASES_GAP = 80;
+
+/** Casos numa faixa abaixo do mapa, com a mesma largura dele. */
+function withCases(base: { containers: AiLayout['containers']; nodes: AiLayout['nodes'] }, cols: number): AiLayout {
+  const right = Math.max(...base.containers.map((c) => c.box.x + c.box.w));
+  const bottom = Math.max(...base.containers.map((c) => c.box.y + c.box.h));
+  const caseW = (right - PAD * 2 - (cols - 1) * GAP_X) / cols;
+  const rows = Math.ceil(aiCases.length / cols);
+  const y = bottom + CASES_GAP;
+  aiCases.forEach((c, i) =>
+    base.nodes.set(c.id, {
+      x: PAD + (i % cols) * (caseW + GAP_X),
+      y: y + CASES_HEADER + Math.floor(i / cols) * (AI_CASE_H + GAP_Y),
+    }),
+  );
+  return {
+    ...base,
+    caseW,
+    casesBand: { x: 0, y, w: right, h: CASES_HEADER + rows * AI_CASE_H + (rows - 1) * GAP_Y + PAD },
+  };
 }
 
 const PAD = 18;
@@ -35,7 +62,7 @@ const GROUP_W = PAD * 2 + GROUP_COLS * NODE_W + (GROUP_COLS - 1) * GAP_X;
  * Trilha: uma coluna por etapa, da esquerda (primeiro a estudar) para a direita (último).
  * Dentro da coluna, os tópicos ficam na ordem de estudo, de cima para baixo.
  */
-function trail(): AiLayout {
+function trail() {
   const containers: AiLayout['containers'] = [];
   const nodes = new Map<string, { x: number; y: number }>();
   const tallest = Math.max(...aiStages.map((s) => aiTopics.filter((t) => t.stage === s.n).length));
@@ -51,7 +78,7 @@ function trail(): AiLayout {
 }
 
 /** Por área: grade de 3 colunas, como o mapa de System Design, com os tópicos na ordem de estudo. */
-function areas(): AiLayout {
+function areas() {
   const containers: AiLayout['containers'] = [];
   const nodes = new Map<string, { x: number; y: number }>();
   const heightOf = (count: number) => {
@@ -79,4 +106,4 @@ function areas(): AiLayout {
   return { containers, nodes };
 }
 
-export const aiLayouts: Record<AiView, AiLayout> = { trilha: trail(), areas: areas() };
+export const aiLayouts: Record<AiView, AiLayout> = { trilha: withCases(trail(), 6), areas: withCases(areas(), 3) };

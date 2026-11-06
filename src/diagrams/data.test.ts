@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { cases } from '../data/cases';
-import { diagramByCase, diagramFor, diagrams, diagramVersions, versionOf } from './data';
+import { aiCases } from '../ai/cases';
+import { allDiagrams, diagramByCase, diagramFor, diagrams, diagramVersions, versionOf } from './data';
+import { caseMeta } from './caseMeta';
 
 describe('diagramas dos casos', () => {
   it('todo caso tem diagrama e nenhum diagrama fica sem caso', () => {
     const ids = new Set(cases.map((c) => c.id));
     for (const c of cases) expect(diagramByCase.has(c.id), c.id).toBe(true);
     for (const d of diagrams) expect(ids.has(d.caseId), d.caseId).toBe(true);
+  });
+
+  it('todo caso de IA tem diagrama e todo diagrama tem cabeçalho', () => {
+    for (const c of aiCases) expect(diagramByCase.has(c.id), c.id).toBe(true);
+    for (const d of allDiagrams) expect(caseMeta.has(d.caseId), d.caseId).toBe(true);
   });
 
   it('versões de um caso são únicas e a padrão é a mais nova', () => {
@@ -18,7 +25,7 @@ describe('diagramas dos casos', () => {
   });
 
   it('a partir da v2, toda versão diz o que mudou', () => {
-    for (const d of diagrams) if (versionOf(d) > 1) expect(d.changes?.length, d.caseId).toBeGreaterThan(0);
+    for (const d of allDiagrams) if (versionOf(d) > 1) expect(d.changes?.length, d.caseId).toBeGreaterThan(0);
   });
 
   it('o encurtador tem v2 padrão e a v1 continua acessível', () => {
@@ -27,7 +34,7 @@ describe('diagramas dos casos', () => {
     expect(diagramFor('url-shortener', 9)).toBe(diagramByCase.get('url-shortener'));
   });
 
-  for (const d of diagrams) {
+  for (const d of allDiagrams) {
     describe(`${d.caseId} v${versionOf(d)}`, () => {
       const ids = new Set(d.components.map((c) => c.id));
 

@@ -1,5 +1,5 @@
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import type { AiGroup, AiStage, AiTopic } from './types';
+import type { AiCase, AiGroup, AiStage, AiTopic } from './types';
 
 /** focus = selecionado; path = pré-requisito (direto ou indireto); next = o que ele destrava; related = ligado sem ordem. */
 export type AiEmphasis = 'normal' | 'focus' | 'path' | 'next' | 'related' | 'dim';
@@ -9,6 +9,7 @@ export type AiTrailNode = Node<TopicData, 'aiTrail'>;
 export type AiAreaNode = Node<TopicData, 'aiArea'>;
 export type StageNode = Node<{ stage: AiStage; count: number; total: number; dim: boolean }, 'stage'>;
 export type AiGroupNode = Node<{ group: AiGroup; dim: boolean }, 'aiGroup'>;
+export type AiCaseNode = Node<{ aiCase: AiCase; emphasis: AiEmphasis; count: number }, 'aiCase'>;
 
 const hidden = { className: 'handle', isConnectable: false } as const;
 
@@ -39,6 +40,7 @@ export function AiTrailCard({ data }: NodeProps<AiTrailNode>) {
       <Handle type="target" id="l" position={Position.Left} {...hidden} />
       <Handle type="target" id="rt" position={Position.Right} {...hidden} />
       <Handle type="source" id="r" position={Position.Right} {...hidden} />
+      <Handle type="source" id="b" position={Position.Bottom} {...hidden} />
       <Body data={data} />
     </>
   );
@@ -82,4 +84,22 @@ export function AiGroupBox({ data }: NodeProps<AiGroupNode>) {
   );
 }
 
-export const aiNodeTypes = { aiTrail: AiTrailCard, aiArea: AiAreaCard, stage: StageColumn, aiGroup: AiGroupBox };
+/** Card do caso, no mesmo estilo dos casos do mapa de System Design; os termos usados chegam por cima. */
+export function AiCaseCard({ data }: NodeProps<AiCaseNode>) {
+  const { aiCase, emphasis, count } = data;
+  const e = emphasis === 'path' || emphasis === 'next' || emphasis === 'related' ? 'neighbor' : emphasis;
+  return (
+    <div className={`card case is-${e}`} title={aiCase.summary}>
+      <Handle type="target" id="t" position={Position.Top} {...hidden} />
+      <div className="case-top">
+        <span className="case-num">IA {String(aiCase.number).padStart(2, '0')}</span>
+        <span className="case-meta">
+          {aiCase.level} · {count} termos
+        </span>
+      </div>
+      <span className="card-title">{aiCase.title}</span>
+    </div>
+  );
+}
+
+export const aiNodeTypes = { aiTrail: AiTrailCard, aiArea: AiAreaCard, stage: StageColumn, aiGroup: AiGroupBox, aiCase: AiCaseCard };

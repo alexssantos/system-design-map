@@ -10,6 +10,27 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ## [Não lançado]
 
+## [0.8.0] - 2026-11-06
+
+### Adicionado
+
+- Seis casos de estudo no mapa de Engenharia de IA, do mais simples ao mais "staff", cada um com o ganho real que justifica a arquitetura e quando não usar:
+  1. Chatbot de suporte com RAG sobre a documentação interna.
+  2. O loop agêntico: pensa, age, observa, repete, com parada, erro como observação e contexto que cresce.
+  3. Agente de código que abre PRs, com sandbox, testes como sinal e merge humano.
+  4. Gateway de LLM da empresa: cota por time, guardrails, cache semântico, roteamento e fallback.
+  5. Extração de documentos em lote com saída estruturada, Batch API, validação e revisão humana.
+  6. Sistema multiagente de pesquisa com orquestrador, subagentes em paralelo e LLM-as-judge.
+- Diagrama de arquitetura animado para cada caso de IA, no modal ou em guia nova (`#/diagrama/ia-...`), com notas de implementação, alertas e dicas de entrevista. O RAG tem filtro para acender só a pergunta ou só a ingestão.
+- Faixa de casos abaixo do mapa de IA: clicar num caso acende os termos que ele exercita; clique duplo abre o diagrama. O painel do caso traz perguntas de deep dive, projeto para implementar e os termos agrupados por área, com o motivo.
+- No painel de cada termo de IA, a seção "Usado nos casos" mostra onde ele é aplicado; a busca do mapa também acha casos.
+- Dez tipos de componente com ícone animado para diagramas de IA: modelo, embeddings, banco vetorial, agente, ferramenta, sandbox, humano no loop, avaliação, guardrail e montagem de contexto.
+
+### Alterado
+
+- O filtro de caminho dos diagramas aceita nomes próprios por caso (ex.: "Pergunta" e "Ingestão").
+- O contador de diagramas do mapa de System Design conta só os casos dele.
+
 ## [0.7.0] - 2026-10-31
 
 ### Adicionado
@@ -123,7 +144,8 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 - Testes de integridade dos dados (referências, ids únicos, ganho em todo padrão) com Vitest.
 - CI de testes e build e workflow de deploy no GitHub Pages.
 
-[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.7.0...HEAD
+[Não lançado]: https://github.com/alexssantos/system-design-map/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/alexssantos/system-design-map/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/alexssantos/system-design-map/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/alexssantos/system-design-map/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/alexssantos/system-design-map/compare/v0.4.0...v0.5.0

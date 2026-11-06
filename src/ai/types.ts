@@ -33,3 +33,24 @@ export interface AiTopic {
   /** Tópicos ligados sem ordem de estudo entre eles. */
   related?: string[];
 }
+
+/** Caso de estudo do mapa de IA: um sistema real em que os termos do mapa resolvem um problema concreto. */
+export interface AiCase {
+  id: string;
+  /** 1 é o primeiro a estudar. */
+  number: number;
+  title: string;
+  /** Produtos ou situações do mundo real parecidos com o caso. */
+  examples: string;
+  /** Primeiro nível em que o entrevistador espera que você desenhe o caso. */
+  level: 'senior' | 'staff';
+  summary: string;
+  /** O ganho concreto que justifica a arquitetura. */
+  gain: string;
+  /** Quando essa arquitetura não vale o custo. */
+  whenNot: string;
+  deepDive: string[];
+  project: string;
+  /** Termos do mapa que o caso exercita, com o motivo. */
+  uses: { topic: string; why: string }[];
+}

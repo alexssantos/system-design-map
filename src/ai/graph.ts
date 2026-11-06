@@ -1,6 +1,7 @@
+import { aiCases } from './cases';
 import { aiGroups, aiStages } from './groups';
 import { aiTopics } from './topics';
-import type { AiGroup, AiStage, AiTopic } from './types';
+import type { AiCase, AiGroup, AiStage, AiTopic } from './types';
 
 export const aiGroupById = new Map<string, AiGroup>(aiGroups.map((g) => [g.id, g]));
 export const aiStageByN = new Map<number, AiStage>(aiStages.map((s) => [s.n, s]));
@@ -81,4 +82,15 @@ export function focusSets(id: string) {
   return { path, next, related, edgeIds };
 }
 
-export { aiGroups, aiStages, aiTopics };
+export const aiCaseById = new Map<string, AiCase>(aiCases.map((c) => [c.id, c]));
+
+/** Casos que usam cada termo, com o motivo. */
+export const casesOfTopic = new Map<string, { case: AiCase; why: string }[]>(aiTopics.map((t) => [t.id, []]));
+for (const c of aiCases) for (const u of c.uses) casesOfTopic.get(u.topic)?.push({ case: c, why: u.why });
+
+/** Ligações termo → caso, para desenhar quando um dos dois está em foco. */
+export const aiCaseEdges: AiEdge[] = aiCases.flatMap((c) =>
+  c.uses.map((u) => ({ id: `use:${u.topic}>${c.id}`, source: u.topic, target: c.id, kind: 'related' as const })),
+);
+
+export { aiCases, aiGroups, aiStages, aiTopics };

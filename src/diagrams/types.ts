@@ -22,7 +22,18 @@ export type ComponentKind =
   | 'search'
   | 'geo'
   | 'ledger'
-  | 'metrics';
+  | 'metrics'
+  // Engenharia de IA
+  | 'llm'
+  | 'embed'
+  | 'vector'
+  | 'agent'
+  | 'tool'
+  | 'sandbox'
+  | 'human'
+  | 'judge'
+  | 'guard'
+  | 'context';
 
 /** sync = requisição/resposta, async = evento ou fila, replication = cópia de dados, read = leitura de cache. */
 export type FlowKind = 'sync' | 'async' | 'replication' | 'read';
@@ -83,4 +94,6 @@ export interface Diagram {
   flows: DiagramFlow[];
   notes: DiagramNote[];
   zones?: DiagramZone[];
+  /** Nome dos dois caminhos no filtro do diagrama; sem isso = leitura (clique) e escrita (criar link). */
+  paths?: { read: string; write: string };
 }

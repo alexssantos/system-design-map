@@ -1,43 +1,8 @@
-import type {
-  ComponentKind,
-  Diagram,
-  DiagramComponent,
-  DiagramFlow,
-  DiagramNote,
-  FlowKind,
-  FlowPath,
-  NoteKind,
-} from './types';
+import { aiDiagrams } from '../ai/diagrams';
+import { c, f, n, on } from './helpers';
+import type { Diagram } from './types';
 
-const c = (
-  id: string,
-  kind: ComponentKind,
-  label: string,
-  col: number,
-  row: number,
-  tech?: string,
-  stack?: boolean,
-): DiagramComponent => ({ id, kind, label, at: [col, row], tech, stack });
-
-const f = (from: string, to: string, kind: FlowKind, label?: string, both?: boolean): DiagramFlow => ({
-  from,
-  to,
-  kind,
-  label,
-  both,
-});
-
-/** Fluxo marcado com o caminho (leitura, escrita ou os dois) para o filtro do diagrama. */
-const on = (path: FlowPath, flow: DiagramFlow): DiagramFlow => ({ ...flow, path });
-
-const n = (kind: NoteKind, title: string, text: string, col: number, row: number, target?: string): DiagramNote => ({
-  kind,
-  title,
-  text,
-  at: [col, row],
-  target,
-});
-
+/** Diagramas dos casos de System Design. */
 export const diagrams: Diagram[] = [
   // ─────────────── 01 Encurtador de URL ───────────────
   {
@@ -654,9 +619,12 @@ export const diagrams: Diagram[] = [
 
 export const versionOf = (d: Diagram) => d.version ?? 1;
 
+/** Todos os diagramas do app: System Design e Engenharia de IA. */
+export const allDiagrams: Diagram[] = [...diagrams, ...aiDiagrams];
+
 /** Todas as versões de cada caso, da mais nova para a mais antiga. */
 export const diagramVersions = new Map<string, Diagram[]>();
-for (const d of diagrams) diagramVersions.set(d.caseId, [...(diagramVersions.get(d.caseId) ?? []), d]);
+for (const d of allDiagrams) diagramVersions.set(d.caseId, [...(diagramVersions.get(d.caseId) ?? []), d]);
 for (const list of diagramVersions.values()) list.sort((a, b) => versionOf(b) - versionOf(a));
 
 /** Versão padrão (a mais nova) de cada caso. */
