@@ -25,6 +25,16 @@ export const kindColor: Record<ComponentKind, string> = {
   geo: '#d1477a',
   ledger: '#8b5cf6',
   metrics: '#6b7280',
+  llm: '#7c5cff',
+  embed: '#00a3a3',
+  vector: '#8b5cf6',
+  agent: '#e0662d',
+  tool: '#2e9e5b',
+  sandbox: '#5b6b8c',
+  human: '#4f7cff',
+  judge: '#b08400',
+  guard: '#d64545',
+  context: '#0f8fb8',
 };
 
 export const kindName: Record<ComponentKind, string> = {
@@ -51,6 +61,16 @@ export const kindName: Record<ComponentKind, string> = {
   geo: 'Índice geoespacial',
   ledger: 'Ledger',
   metrics: 'Observabilidade',
+  llm: 'Modelo (LLM)',
+  embed: 'Modelo de embeddings',
+  vector: 'Banco vetorial',
+  agent: 'Agente (loop)',
+  tool: 'Ferramenta',
+  sandbox: 'Sandbox',
+  human: 'Humano no loop',
+  judge: 'Avaliação / juiz',
+  guard: 'Guardrail',
+  context: 'Montagem de contexto',
 };
 
 const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
@@ -239,6 +259,84 @@ const icons: Record<ComponentKind, React.ReactNode> = {
     <>
       <path d="M5 38h34M5 6v32" {...S} />
       <path d="M9 30l8-9 7 5 12-14" {...S} className="ic-draw" />
+    </>
+  ),
+  llm: (
+    <>
+      <rect x="9" y="9" width="26" height="26" rx="6" {...S} />
+      <path d="M15 5v4M22 5v4M29 5v4M15 35v4M22 35v4M29 35v4M5 15h4M5 22h4M5 29h4M35 15h4M35 22h4M35 29h4" {...S} strokeWidth={1.6} />
+      <path d="M22 14l2.2 5.8L30 22l-5.8 2.2L22 30l-2.2-5.8L14 22l5.8-2.2z" fill="currentColor" className="ic-pulse" />
+    </>
+  ),
+  embed: (
+    <>
+      <path d="M5 12h12M5 18h9M5 24h12M5 30h7" {...S} strokeWidth={1.6} opacity=".6" />
+      <path d="M19 21h6M22 18l3 3-3 3" {...S} className="ic-nudge" />
+      <path d="M29 33V11M29 33h11" {...S} strokeWidth={1.4} opacity=".5" />
+      <path d="M29 33l9-17" {...S} className="ic-draw" />
+      <circle cx="38" cy="16" r="2.5" fill="currentColor" className="ic-blink" />
+    </>
+  ),
+  vector: (
+    <>
+      <ellipse cx="22" cy="10" rx="14" ry="5" {...S} />
+      <path d="M8 10v24c0 3 6 5 14 5s14-2 14-5V10" {...S} />
+      <circle cx="15" cy="22" r="2" fill="currentColor" className="ic-blink" />
+      <circle cx="22" cy="27" r="2" fill="currentColor" className="ic-blink ic-delay" />
+      <circle cx="29" cy="21" r="2" fill="currentColor" className="ic-blink ic-delay2" />
+      <path d="M15 22l7 5 7-6" {...S} strokeWidth={1.2} opacity=".6" />
+    </>
+  ),
+  agent: (
+    <>
+      <g className="ic-spin-slow">
+        <path d="M36 22a14 14 0 0 1-24 9.9" {...S} />
+        <path d="M8 22a14 14 0 0 1 24-9.9" {...S} />
+        <path d="M32 6v6.5h-6.5M12 38v-6.5h6.5" {...S} />
+      </g>
+      <circle cx="22" cy="22" r="4" fill="currentColor" className="ic-pulse" />
+    </>
+  ),
+  tool: (
+    <>
+      <path d="M27 7a8 8 0 0 0-9 10.5L7 28.5a3.5 3.5 0 0 0 5 5l11-11A8 8 0 0 0 33.5 13l-5 5-4-1-1-4z" {...S} className="ic-bob" />
+    </>
+  ),
+  sandbox: (
+    <>
+      <rect x="5" y="7" width="34" height="30" rx="3" {...S} strokeDasharray="4 3" />
+      <path d="M5 14h34" {...S} opacity=".5" />
+      <path d="M11 22l4 3-4 3M18 29h8" {...S} className="ic-blink" />
+    </>
+  ),
+  human: (
+    <>
+      <circle cx="18" cy="13" r="6" {...S} />
+      <path d="M6 37c0-7 5-12 12-12s12 5 12 12" {...S} />
+      <circle cx="33" cy="26" r="7" {...S} />
+      <path d="M30 26l2.2 2.2L36.5 24" {...S} className="ic-draw" />
+    </>
+  ),
+  judge: (
+    <>
+      <rect x="9" y="6" width="26" height="33" rx="3" {...S} />
+      <path d="M14 14l2 2 4-4M14 23l2 2 4-4" {...S} className="ic-draw" />
+      <path d="M24 14h6M24 23h6M14 32h16" {...S} strokeWidth={1.4} opacity=".6" />
+    </>
+  ),
+  guard: (
+    <>
+      <path d="M22 4l15 6v10c0 10-7 16-15 20C14 36 7 30 7 20V10z" {...S} />
+      <path d="M22 13v10" {...S} strokeWidth={3} className="ic-blink" />
+      <circle cx="22" cy="29" r="1.8" fill="currentColor" />
+    </>
+  ),
+  context: (
+    <>
+      <rect x="8" y="5" width="22" height="9" rx="2" {...S} opacity=".55" />
+      <rect x="8" y="17" width="28" height="9" rx="2" {...S} className="ic-bob" />
+      <rect x="8" y="29" width="18" height="9" rx="2" {...S} opacity=".55" />
+      <path d="M12 21.5h12" {...S} strokeWidth={1.4} />
     </>
   ),
 };

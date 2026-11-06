@@ -24,6 +24,9 @@ O mapa de AI tem 68 termos do livro *AI Engineering* (Chip Huyen), em 9 áreas q
 - Clique num termo: acendem todos os pré-requisitos, diretos e indiretos, e o que ele destrava. O painel lista a trilha completa até ele, na ordem.
 - Setas sólidas vão do pré-requisito para quem depende dele; linhas tracejadas ligam termos relacionados sem ordem.
 - Os downloads (PNG ou SVG animado) baixam o mapa inteiro ou a trilha do termo selecionado.
+- Abaixo do mapa ficam 6 casos de estudo de IA (RAG, loop agêntico, agente de código, gateway de LLM, extração em lote e multiagente). Clicar num caso acende os termos que ele usa; clique duplo abre o diagrama animado.
+
+Os casos ficam em `src/ai/cases.ts` (com `uses`: termo e motivo) e os diagramas em `src/ai/diagrams.ts`, no mesmo formato dos casos de System Design.
 
 Para incluir um termo, adicione-o em `src/ai/topics.ts` na posição da trilha onde ele deve ser estudado, com `stage` e `prereqs`. Os testes falham se um pré-requisito vier depois do termo, se estiver numa etapa posterior ou se já vier por outro pré-requisito.
 

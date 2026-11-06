@@ -242,7 +242,7 @@ function MapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void
     <div className="app">
       <Toolbar
         title="Mapa de System Design"
-        subtitle={<>{topics.length} tópicos · {cases.length} casos · {diagramByCase.size} diagramas</>}
+        subtitle={<>{topics.length} tópicos · {cases.length} casos · {cases.filter((c) => diagramByCase.has(c.id)).length} diagramas</>}
         end={
           <IconButton
             icon={theme === 'dark' ? 'sun' : 'moon'}

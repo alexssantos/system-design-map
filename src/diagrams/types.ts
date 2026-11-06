@@ -22,7 +22,18 @@ export type ComponentKind =
   | 'search'
   | 'geo'
   | 'ledger'
-  | 'metrics';
+  | 'metrics'
+  // Engenharia de IA
+  | 'llm'
+  | 'embed'
+  | 'vector'
+  | 'agent'
+  | 'tool'
+  | 'sandbox'
+  | 'human'
+  | 'judge'
+  | 'guard'
+  | 'context';
 
 /** sync = requisição/resposta, async = evento ou fila, replication = cópia de dados, read = leitura de cache. */
 export type FlowKind = 'sync' | 'async' | 'replication' | 'read';
@@ -48,9 +59,13 @@ export interface DiagramFlow {
   label?: string;
   /** Desenha nos dois sentidos (ex.: WebSocket). */
   both?: boolean;
+  /** Lados de saída e de chegada; sem isso, escolhidos pela posição dos componentes (ex.: para desenhar um ciclo). */
+  sides?: [FlowSide, FlowSide];
   /** Caminho a que o fluxo pertence, para o filtro leitura/escrita; sem caminho = fica fora dos dois. */
   path?: FlowPath;
 }
+
+export type FlowSide = 'top' | 'right' | 'bottom' | 'left';
 
 /** read = redirect (clique), write = criação do link, both = usado pelos dois caminhos. */
 export type FlowPath = 'read' | 'write' | 'both';
@@ -83,4 +98,6 @@ export interface Diagram {
   flows: DiagramFlow[];
   notes: DiagramNote[];
   zones?: DiagramZone[];
+  /** Nome dos dois caminhos no filtro do diagrama; sem isso = leitura (clique) e escrita (criar link). */
+  paths?: { read: string; write: string };
 }

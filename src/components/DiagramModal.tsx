@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Theme } from '../theme';
-import { caseById } from '../data/graph';
+import { caseMeta } from '../diagrams/caseMeta';
 import { DiagramView } from '../diagrams/DiagramView';
 import { diagramFor, diagramVersions, versionOf } from '../diagrams/data';
 import type { Diagram } from '../diagrams/types';
@@ -10,7 +10,6 @@ import { Badge, Button, IconButton, SegmentedControl } from '../ui-kit';
 import { CasePodcast, hasAudio, hasPodcast } from './CasePodcast';
 import { Modal } from './kit/Modal';
 
-const pad = (n: number) => String(n).padStart(2, '0');
 /** Link da página do diagrama; a versão só entra no endereço quando não é a padrão. */
 export const diagramHref = (caseId: string, version?: number) => {
   const latest = diagramVersions.get(caseId)?.[0];
@@ -62,7 +61,7 @@ function VersionPicker({ caseId, version, onChange }: { caseId: string; version:
 function DownloadDiagram({ caseId, version, bodyRef }: { caseId: string; version: number; bodyRef: RefObject<HTMLDivElement | null> }) {
   const [busy, setBusy] = useState(false);
   const [format, setFormat] = useState<ImageFormat>('png');
-  const c = caseById.get(caseId)!;
+  const c = caseMeta.get(caseId)!;
   return (
     <div className="diagram-download">
       <FormatPicker value={format} onChange={setFormat} />
@@ -71,7 +70,7 @@ function DownloadDiagram({ caseId, version, bodyRef }: { caseId: string; version
         label={busy ? 'Gerando imagem…' : `Baixar diagrama (${format === 'svg' ? 'SVG animado' : 'PNG'})`}
         disabled={busy}
         onClick={() =>
-          bodyRef.current && runExport(setBusy, () => exportFlowImage(bodyRef.current!, { fileName: `caso ${pad(c.number)} ${c.title} v${version}`, format }))
+          bodyRef.current && runExport(setBusy, () => exportFlowImage(bodyRef.current!, { fileName: `${c.badge} ${c.title} v${version}`, format }))
         }
       />
     </div>
@@ -97,12 +96,12 @@ function useVersion(caseId: string | null, initial?: number) {
 }
 
 function Title({ caseId }: { caseId: string }) {
-  const c = caseById.get(caseId)!;
+  const c = caseMeta.get(caseId)!;
   return (
     <>
-      <Badge tone="accent">Caso {pad(c.number)}</Badge>
+      <Badge tone="accent">{c.badge}</Badge>
       {c.title}
-      <Badge tone="neutral">nível {c.tier}</Badge>
+      <Badge tone="neutral">{c.level}</Badge>
     </>
   );
 }
@@ -166,6 +165,7 @@ export function DiagramPage({
     window.history.replaceState(null, '', diagramHref(caseId, v));
   };
   const bodyRef = useRef<HTMLDivElement>(null);
+  const home = caseMeta.get(caseId)?.home ?? '';
   if (!diagram) {
     return (
       <div className="page-missing">
@@ -189,7 +189,7 @@ export function DiagramPage({
           <VersionPicker caseId={caseId} version={version} onChange={changeVersion} />
           <ListenToggle caseId={caseId} version={version} listen={listen} setListen={setListen} />
           <DownloadDiagram caseId={caseId} version={version} bodyRef={bodyRef} />
-          <Button variant="dark" size="sm" icon="chevron-left" onClick={() => (window.location.hash = '')}>
+          <Button variant="dark" size="sm" icon="chevron-left" onClick={() => (window.location.hash = home)}>
             Mapa
           </Button>
           <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label="Trocar tema" variant="soft" onClick={toggleTheme} />

@@ -1,6 +1,8 @@
 import { Background, Controls, MarkerType, ReactFlow, useReactFlow, type Edge, type Node } from '@xyflow/react';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { DiagramModal } from '../components/DiagramModal';
 import { FormatPicker } from '../components/FormatPicker';
+import { Band } from '../components/nodes';
 import { TextField } from '../components/kit/TextField';
 import { Toolbar } from '../components/Toolbar';
 import { edgeTypes } from '../components/HaloEdge';
@@ -10,10 +12,38 @@ import { NODE_H, NODE_W } from '../layout';
 import type { Theme } from '../theme';
 import { Badge, Button, IconButton, SegmentedControl, Switch } from '../ui-kit';
 import { AiPanel } from './AiPanel';
-import { aiEdges, aiGroupById, aiGroups, aiStages, aiTopicById, aiTopics, focusSets, orderOf } from './graph';
-import { aiLayouts, type AiView } from './layout';
+import {
+  aiCaseById,
+  aiCaseEdges,
+  aiCases,
+  aiEdges,
+  aiGroupById,
+  aiGroups,
+  aiStages,
+  aiTopicById,
+  aiTopics,
+  casesOfTopic,
+  focusSets,
+  orderOf,
+} from './graph';
+import { AI_CASE_H, aiLayouts, type AiView } from './layout';
 import { aiNodeTypes, type AiEmphasis } from './nodes';
 import './ai.css';
+
+const nodeTypes = { ...aiNodeTypes, band: Band };
+
+/** O que acende quando um caso está em foco: ele e os termos que exercita. */
+function caseSets(id: string) {
+  const topics = new Set(aiCaseById.get(id)?.uses.map((u) => u.topic));
+  return { topics, edgeIds: new Set(aiCaseEdges.filter((e) => e.target === id).map((e) => e.id)) };
+}
+
+/** Itens a enquadrar quando algo é selecionado. */
+function frameIds(id: string) {
+  if (aiCaseById.has(id)) return [id, ...caseSets(id).topics];
+  const s = focusSets(id);
+  return [id, ...s.path, ...s.next];
+}
 
 const size = (width: number, height: number) => ({ width, height, measured: { width, height } });
 const isContainer = (id: string) => id.startsWith('group:') || id.startsWith('band:');
@@ -31,6 +61,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
   const [query, setQuery] = useState('');
   const [exporting, setExporting] = useState<'all' | 'selection' | null>(null);
   const [format, setFormat] = useState<ImageFormat>('png');
+  const [diagramFor, setDiagramFor] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
   const { focus: focusMode, panelHidden, setPanelHidden } = useLayout();
@@ -38,23 +69,31 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
   const layout = aiLayouts[view];
 
   const focus = hovered ?? selected;
-  const selectedFit = useMemo(() => {
-    if (!selected) return undefined;
-    const s = focusSets(selected);
-    return [selected, ...s.path, ...s.next];
-  }, [selected]);
-  const sets = useMemo(() => (focus ? focusSets(focus) : null), [focus]);
+  const selectedFit = useMemo(() => (selected ? frameIds(selected) : undefined), [selected]);
+  const focusIsCase = Boolean(focus && aiCaseById.has(focus));
+  const sets = useMemo(() => (focus && !focusIsCase ? focusSets(focus) : null), [focus, focusIsCase]);
+  const cSets = useMemo(() => (focus && focusIsCase ? caseSets(focus) : null), [focus, focusIsCase]);
+  /** Casos que usam o termo em foco. */
+  const topicCases = useMemo(() => new Set(focus && !focusIsCase ? (casesOfTopic.get(focus) ?? []).map((u) => u.case.id) : []), [focus, focusIsCase]);
 
   const matches = useMemo(() => {
     const q = normalize(query.trim());
     if (!q) return null;
-    return new Set(aiTopics.filter((t) => normalize(`${t.title} ${t.summary} ${t.inPractice}`).includes(q)).map((t) => t.id));
+    return new Set([
+      ...aiTopics.filter((t) => normalize(`${t.title} ${t.summary} ${t.inPractice}`).includes(q)).map((t) => t.id),
+      ...aiCases.filter((c) => normalize(`${c.title} ${c.examples} ${c.summary}`).includes(q)).map((c) => c.id),
+    ]);
   }, [query]);
 
   const emphasisOf = useCallback(
     (id: string): AiEmphasis => {
+      if (focus && cSets) {
+        if (id === focus) return 'focus';
+        return cSets.topics.has(id) ? 'path' : 'dim';
+      }
       if (focus && sets) {
         if (id === focus) return 'focus';
+        if (topicCases.has(id)) return 'related';
         if (sets.path.has(id)) return 'path';
         if (sets.next.has(id)) return 'next';
         if (sets.related.has(id)) return 'related';
@@ -63,7 +102,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
       if (matches) return matches.has(id) ? 'focus' : 'dim';
       return 'normal';
     },
-    [focus, sets, matches],
+    [focus, sets, cSets, topicCases, matches],
   );
 
   const nodes: Node[] = useMemo(() => {
@@ -95,12 +134,51 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
         draggable: false,
       });
     }
+    const band = layout.casesBand;
+    out.push({
+      id: 'band:cases',
+      type: 'band',
+      position: { x: band.x, y: band.y },
+      data: { title: 'Casos de estudo', subtitle: 'Sistemas reais em que esses termos resolvem um problema. Clique duplo abre o diagrama animado.' },
+      ...size(band.w, band.h),
+      selectable: false,
+      draggable: false,
+      zIndex: -1,
+    });
+    for (const c of aiCases) {
+      out.push({
+        id: c.id,
+        type: 'aiCase',
+        position: layout.nodes.get(c.id)!,
+        data: { aiCase: c, emphasis: emphasisOf(c.id), count: c.uses.length },
+        ...size(layout.caseW, AI_CASE_H),
+        draggable: false,
+      });
+    }
     return out;
   }, [layout, view, emphasisOf, focus, matches]);
 
   const edges: Edge[] = useMemo(() => {
     const stageOf = (id: string) => aiTopicById.get(id)!.stage;
-    return aiEdges
+    const useEdges: Edge[] = aiCaseEdges
+      .filter((e) => (cSets ? cSets.edgeIds.has(e.id) : Boolean(sets) && e.source === focus))
+      .map((e) => {
+        const color = aiGroupById.get(aiTopicById.get(e.source)!.group)!.color;
+        return {
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: 'b',
+          targetHandle: 't',
+          type: 'halo',
+          data: { color, dot: true },
+          animated: true,
+          markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
+          style: { stroke: color, strokeWidth: cSets ? 2.2 : 1.6, opacity: cSets ? 0.9 : 0.55 },
+        };
+      });
+    if (cSets) return useEdges;
+    const topicEdges: Edge[] = aiEdges
       .filter((e) => (sets ? sets.edgeIds.has(e.id) : showAllEdges))
       .map((e) => {
         const color = aiGroupById.get(aiTopicById.get(e.source)!.group)!.color;
@@ -130,15 +208,15 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
           },
         };
       });
-  }, [sets, focus, showAllEdges, view]);
+    return [...topicEdges, ...useEdges];
+  }, [sets, cSets, focus, showAllEdges, view]);
 
   const select = useCallback(
     (id: string) => {
       setSelected(id);
       setHovered(null);
       setPanelHidden(false);
-      const s = focusSets(id);
-      frameItem(flow, id, [id, ...s.path, ...s.next]);
+      frameItem(flow, id, frameIds(id));
     },
     [flow, setPanelHidden],
   );
@@ -146,9 +224,16 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
   const exportMap = (which: 'all' | 'selection') => {
     if (!canvasRef.current || exporting) return;
     const root = canvasRef.current;
-    const s = which === 'selection' && selected ? focusSets(selected) : null;
-    const keep = s ? new Set([selected!, ...s.path, ...s.next, ...s.related]) : null;
-    const name = s ? `trilha ${aiTopicById.get(selected!)?.title}` : `mapa de engenharia de ai ${view === 'trilha' ? 'trilha' : 'areas'}`;
+    const sel = which === 'selection' ? selected : null;
+    const asCase = sel && aiCaseById.has(sel) ? caseSets(sel) : null;
+    const s = sel && !asCase ? focusSets(sel) : null;
+    const keep = asCase ? new Set([sel!, ...asCase.topics]) : s ? new Set([sel!, ...s.path, ...s.next, ...s.related]) : null;
+    const edgeIds = asCase ? asCase.edgeIds : s?.edgeIds;
+    const name = asCase
+      ? `caso ${aiCaseById.get(sel!)?.title}`
+      : s
+        ? `trilha ${aiTopicById.get(sel!)?.title}`
+        : `mapa de engenharia de ai ${view === 'trilha' ? 'trilha' : 'areas'}`;
     runExport(
       (busy) => setExporting(busy ? which : null),
       () =>
@@ -157,7 +242,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
           format,
           isContainer,
           includeNode: keep ? (id) => keep.has(id) : undefined,
-          includeEdge: s ? (id) => s.edgeIds.has(id) : undefined,
+          includeEdge: edgeIds ? (id) => edgeIds.has(id) : undefined,
         }),
     );
   };
@@ -166,7 +251,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
     <div className="app">
       <Toolbar
         title="Mapa de Engenharia de AI"
-        subtitle={<>{aiTopics.length} termos · {aiGroups.length} áreas · {aiStages.length} etapas de estudo</>}
+        subtitle={<>{aiTopics.length} termos · {aiGroups.length} áreas · {aiStages.length} etapas · {aiCases.length} casos</>}
         end={
           <IconButton
             icon={theme === 'dark' ? 'sun' : 'moon'}
@@ -190,7 +275,7 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
           <Switch checked={showAllEdges} onChange={setShowAllEdges} label="Todas as conexões" />
         </div>
         <Badge tone="accent" dot className="toolbar__hint">
-          Clique num termo para ver a trilha até ele
+          Clique num termo para ver a trilha; clique duplo num caso abre o diagrama
         </Badge>
         <div className="toolbar__downloads" role="group" aria-label="Baixar imagem">
           <FormatPicker value={format} onChange={setFormat} />
@@ -200,10 +285,10 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
             icon="download"
             disabled={!selected || Boolean(exporting)}
             loading={exporting === 'selection'}
-            title={selected ? `Baixa o termo selecionado com a trilha até ele em ${format.toUpperCase()}` : 'Selecione um termo no mapa'}
+            title={selected ? `Baixa o item selecionado com as conexões dele em ${format.toUpperCase()}` : 'Selecione um termo ou caso no mapa'}
             onClick={() => exportMap('selection')}
           >
-            Trilha do termo
+            {selected && aiCaseById.has(selected) ? 'Termos do caso' : 'Trilha do termo'}
           </Button>
           <Button
             variant="dark"
@@ -225,10 +310,11 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
             key={view}
             nodes={nodes}
             edges={edges}
-            nodeTypes={aiNodeTypes}
+            nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             onNodeClick={(_, n) => n.type?.startsWith('ai') && n.type !== 'aiGroup' && select(n.id)}
-            onNodeMouseEnter={(_, n) => (n.type === 'aiTrail' || n.type === 'aiArea') && setHovered(n.id)}
+            onNodeDoubleClick={(_, n) => n.type === 'aiCase' && setDiagramFor(n.id)}
+            onNodeMouseEnter={(_, n) => (n.type === 'aiTrail' || n.type === 'aiArea' || n.type === 'aiCase') && setHovered(n.id)}
             onNodeMouseLeave={() => setHovered(null)}
             onPaneClick={() => setSelected(null)}
             zoomOnDoubleClick={false}
@@ -243,8 +329,9 @@ export function AiMapView({ theme, toggleTheme }: { theme: Theme; toggleTheme: (
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
-        {showPanel && <AiPanel id={selected} onSelect={select} onClose={() => setSelected(null)} />}
+        {showPanel && <AiPanel id={selected} onSelect={select} onClose={() => setSelected(null)} onOpenDiagram={setDiagramFor} />}
       </div>
+      <DiagramModal caseId={diagramFor} theme={theme} onClose={() => setDiagramFor(null)} />
     </div>
   );
 }

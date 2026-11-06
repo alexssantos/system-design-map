@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aiGroupById, aiGroups, aiStageByN, aiStages, aiTopicById, aiTopics, orderOf, prereqPath } from './graph';
+import { aiCases, aiGroupById, aiGroups, aiStageByN, aiStages, aiTopicById, aiTopics, orderOf, prereqPath } from './graph';
 import { groups, topics, cases } from '../data/graph';
 
 describe('dados do mapa de Engenharia de AI', () => {
@@ -10,6 +10,7 @@ describe('dados do mapa de Engenharia de AI', () => {
       ...topics.map((t) => t.id),
       ...groups.map((g) => g.id),
       ...cases.map((c) => c.id),
+      ...aiCases.map((c) => c.id),
     ];
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -63,5 +64,22 @@ describe('dados do mapa de Engenharia de AI', () => {
 
   it('todos os 68 termos da lista estão no mapa', () => {
     expect(aiTopics).toHaveLength(68);
+  });
+
+  it('casos de IA: numerados em ordem, com termos existentes e sem repetir termo', () => {
+    expect(aiCases.map((c) => c.number)).toEqual(aiCases.map((_, i) => i + 1));
+    for (const c of aiCases) {
+      const ids = c.uses.map((u) => u.topic);
+      expect(new Set(ids).size, c.id).toBe(ids.length);
+      expect(ids.length, c.id).toBeGreaterThanOrEqual(8);
+      for (const t of ids) expect(aiTopicById.has(t), `${c.id} → ${t}`).toBe(true);
+      expect(c.deepDive.length, c.id).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('o loop agêntico é um caso próprio, separado do agente de código', () => {
+    const ids = aiCases.map((c) => c.id);
+    expect(ids).toContain('ia-loop-agentico');
+    expect(ids).toContain('ia-agente-codigo');
   });
 });

@@ -168,7 +168,7 @@ function build(d: Diagram) {
   });
 
   const edges: FlowEdgeT[] = d.flows.map((f, i) => {
-    const [s, t] = pickSides(boxes.get(f.from)!, boxes.get(f.to)!);
+    const [s, t] = f.sides ?? pickSides(boxes.get(f.from)!, boxes.get(f.to)!);
     return {
       id: `f-${i}`,
       type: 'flow',
@@ -309,8 +309,10 @@ function Canvas({ diagram, colorMode, focus, hidden, follow, onPick, filter }: V
   );
 }
 
-/** Filtro que acende só o caminho do redirect ou só o da criação do link. */
-function PathPicker({ value, onChange }: { value: PathFilter; onChange: (v: PathFilter) => void }) {
+const DEFAULT_PATHS = { read: 'Leitura (clique)', write: 'Escrita (criar link)' };
+
+/** Filtro que acende só um dos dois caminhos do desenho (ex.: redirect × criação do link). */
+function PathPicker({ value, onChange, names }: { value: PathFilter; onChange: (v: PathFilter) => void; names: { read: string; write: string } }) {
   return (
     <div className="dg__paths">
       <SegmentedControl
@@ -320,8 +322,8 @@ function PathPicker({ value, onChange }: { value: PathFilter; onChange: (v: Path
         onChange={(v) => onChange(v as PathFilter)}
         options={[
           { value: 'all', label: 'Tudo' },
-          { value: 'read', label: 'Leitura (clique)' },
-          { value: 'write', label: 'Escrita (criar link)' },
+          { value: 'read', label: names.read },
+          { value: 'write', label: names.write },
         ]}
       />
     </div>
@@ -340,7 +342,7 @@ export function DiagramView(props: ViewProps) {
           <Canvas key={`${props.diagram.caseId}@${props.diagram.version ?? 1}`} {...props} filter={filter} />
         </ReactFlowProvider>
       </div>
-      <DiagramLegend diagram={props.diagram}>{hasPaths && <PathPicker value={filter} onChange={setFilter} />}</DiagramLegend>
+      <DiagramLegend diagram={props.diagram}>{hasPaths && <PathPicker value={filter} onChange={setFilter} names={props.diagram.paths ?? DEFAULT_PATHS} />}</DiagramLegend>
     </div>
   );
 }
