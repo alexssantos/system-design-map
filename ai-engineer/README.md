@@ -26,7 +26,7 @@ Na Vercel: framework Vite, diretório raiz `ai-engineer`.
 
 ## O diagrama
 
-- Malha isométrica de 28x14. Cada entidade se encaixa num vértice da malha e as ligações correm só nos dois eixos, em L com o canto arredondado, tocando a borda dos objetos.
+- Malha isométrica de 28x14 que cobre o palco inteiro, de borda a borda em cima e embaixo (por baixo dos números, dos botões e da legenda), e some só nas laterais, como na referência. Cada entidade se encaixa num vértice da malha e as ligações correm só nos dois eixos, em L com o canto arredondado, tocando a borda dos objetos.
 - Troca de passo com os tempos medidos no curso de referência: o que sai some (420 ms); a câmera se reenquadra e o que mudou desliza (820 ms), com as setas acompanhando e nomes em cross-fade; o que é novo cai, um a cada 130 ms (680 ms); cada ligação nova se desenha quando as pontas chegam (560 ms); no fim, pulso verde na base e tráfego. O pacote para antes da ponta da seta e pulsa ao chegar (num vai e volta, só no fim da volta).
 - Câmera por passo: zoom de 0,3 a 1,25 em passos de 0,05, margem de 16 px; o quadro só se mexe quando o conteúdo novo não cabe. O leitor aproxima com Ctrl+roda, pinça ou dois cliques; Ajustar (tecla 0) volta ao quadro. Repetir refaz a troca a partir do passo anterior.
 - Tipos de objeto: `block`, `plate`, `cyl`, `crowd` (muitos usuários), `zone` (área no chão), `queue` (fila com itens). Opções: `scale`, `ghost`, `down` (fora do ar), `gauge`, `note`.

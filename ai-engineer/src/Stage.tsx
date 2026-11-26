@@ -777,6 +777,9 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
   // tamanho do quadro na tela, em px
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 900, h: 600 });
+  // quanto o palco inteiro passa do quadro em cada lado, em px: a grade vai até a borda do palco,
+  // por baixo do painel de números, dos botões e da legenda, como na referência
+  const [bleed, setBleed] = useState({ l: 0, t: 0, r: 0, b: 0 });
   useEffect(() => {
     const host = svgRef.current?.parentElement;
     if (!host) return;
@@ -784,10 +787,21 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
       const w = host.clientWidth;
       const h = host.clientHeight;
       if (w > 0 && h > 0) setSize((s) => (s.w === w && s.h === h ? s : { w, h }));
+      const card = host.offsetParent as HTMLElement | null;
+      if (card && w > 0 && h > 0) {
+        const n = {
+          l: host.offsetLeft,
+          t: host.offsetTop,
+          r: Math.max(0, card.clientWidth - host.offsetLeft - w),
+          b: Math.max(0, card.clientHeight - host.offsetTop - h),
+        };
+        setBleed((o) => (o.l === n.l && o.t === n.t && o.r === n.r && o.b === n.b ? o : n));
+      }
     };
     read();
     const ro = new ResizeObserver(read);
     ro.observe(host);
+    if (host.offsetParent) ro.observe(host.offsetParent);
     return () => ro.disconnect();
   }, []);
 
@@ -1207,6 +1221,15 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
     );
   };
 
+  // área da grade: o quadro da câmera esticado até as bordas do palco (1 px na tela = cam.w / size.w)
+  const upx = cam.w / size.w;
+  const grid = {
+    x: cam.x - bleed.l * upx,
+    y: cam.y - bleed.t * upx,
+    w: cam.w + (bleed.l + bleed.r) * upx,
+    h: cam.h + (bleed.t + bleed.b) * upx,
+  };
+
   return (
     <svg
       ref={svgRef}
@@ -1220,30 +1243,22 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
         <pattern id="iso" width="28" height="14" y="-7" patternUnits="userSpaceOnUse">
           <path d="M0 7 L14 0 L28 7 L14 14 Z" fill="none" className="stage-grid" />
         </pattern>
-        {/* como a referência: elipse centrada no quadro, raio 0,56 da largura e achatada a 0,6 na vertical,
-            então num palco largo a grade só some nas laterais */}
-        <radialGradient
-          id="fade"
-          gradientUnits="userSpaceOnUse"
-          cx={f(cam.x + cam.w / 2)}
-          cy={f(cam.y + cam.h / 2)}
-          r={f(cam.w * 0.56)}
-          gradientTransform={`translate(${f(cam.x + cam.w / 2)} ${f(cam.y + cam.h / 2)}) scale(1 0.6) translate(${f(-(cam.x + cam.w / 2))} ${f(-(cam.y + cam.h / 2))})`}
-        >
-          <stop offset="0" stopColor="#fff" />
-          <stop offset=".42" stopColor="#fff" stopOpacity=".92" />
-          <stop offset=".78" stopColor="#fff" stopOpacity=".35" />
+        {/* como a referência: a grade cobre o palco de cima a baixo e só some nas laterais */}
+        <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fff" stopOpacity="0" />
+          <stop offset=".12" stopColor="#fff" />
+          <stop offset=".88" stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <mask id="fade-mask">
-          <rect x={f(cam.x)} y={f(cam.y)} width={f(cam.w)} height={f(cam.h)} fill="url(#fade)" />
+        </linearGradient>
+        <mask id="fade-mask" maskUnits="userSpaceOnUse" x={f(grid.x)} y={f(grid.y)} width={f(grid.w)} height={f(grid.h)}>
+          <rect x={f(grid.x)} y={f(grid.y)} width={f(grid.w)} height={f(grid.h)} fill="url(#fade)" />
         </mask>
         <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
           <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
 
-      <rect x={f(cam.x)} y={f(cam.y)} width={f(cam.w)} height={f(cam.h)} fill="url(#iso)" mask="url(#fade-mask)" />
+      <rect x={f(grid.x)} y={f(grid.y)} width={f(grid.w)} height={f(grid.h)} fill="url(#iso)" mask="url(#fade-mask)" />
 
       {/* áreas no chão ficam por baixo de tudo */}
       <g>
