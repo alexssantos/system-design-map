@@ -628,7 +628,12 @@ export interface StageProps {
   fitKey?: number;
   /** avisa quando o leitor aproxima ou volta ao quadro */
   onZoom?: (zoomed: boolean) => void;
+  /** há cartão de dados no canto direito: o diagrama se enquadra à esquerda dele */
+  board?: boolean;
 }
+
+/** quadro do palco em px: a grade cobre tudo, o diagrama se enquadra dentro das folgas (chips, legenda, cartão) */
+type Frame = { w: number; h: number; t: number; r: number; b: number; l: number };
 
 /*
  * Tempos medidos no original (designed-to-scale), lição Redundância e failover, 2026-11-26.
@@ -736,20 +741,24 @@ function sceneBounds(sc: Scene, k: number): Box {
 }
 
 /** enquadra a cena como o original: zoom em passos de 0,05 entre 0,3 e 1,25, margem de 16 px, e mantém o quadro quando ainda cabe */
-function fitCam(b: Box, size: { w: number; h: number }, prev: { cam: Cam; zoom: number } | null) {
+function fitCam(b: Box, size: Frame, prev: { cam: Cam; zoom: number } | null) {
   const bw = Math.max(1, b.x1 - b.x0);
   const bh = Math.max(1, b.y1 - b.y0);
-  const zoom = Math.max(ZOOM_MIN, Math.floor(Math.min(ZOOM_MAX, (size.w - 2 * MARGIN) / bw, (size.h - 2 * MARGIN) / bh) * 20 + 1e-6) / 20);
-  const cam = { x: b.x0 - (size.w - bw * zoom) / 2 / zoom, y: b.y0 - (size.h - bh * zoom) / 2 / zoom, w: size.w / zoom, h: size.h / zoom };
+  const iw = Math.max(40, size.w - size.l - size.r);
+  const ih = Math.max(40, size.h - size.t - size.b);
+  const zoom = Math.max(ZOOM_MIN, Math.floor(Math.min(ZOOM_MAX, (iw - 2 * MARGIN) / bw, (ih - 2 * MARGIN) / bh) * 20 + 1e-6) / 20);
+  const cam = { x: b.x0 - (size.l + (iw - bw * zoom) / 2) / zoom, y: b.y0 - (size.t + (ih - bh * zoom) / 2) / zoom, w: size.w / zoom, h: size.h / zoom };
   if (prev) {
     const same = Math.abs(prev.zoom - zoom) < 1e-6;
     const near = prev.zoom < zoom && prev.zoom >= zoom * 0.9;
     if (same || near) {
       const r = prev.cam;
       const i = 12 / prev.zoom;
-      const fits = b.x0 >= r.x + i && b.y0 >= r.y + i && b.x1 <= r.x + r.w - i && b.y1 <= r.y + r.h - i;
-      const u = Math.abs((b.x0 + b.x1) / 2 - (r.x + r.w / 2)) / r.w;
-      const v = Math.abs((b.y0 + b.y1) / 2 - (r.y + r.h / 2)) / r.h;
+      const z = prev.zoom;
+      const ix = { x: r.x + size.l / z, y: r.y + size.t / z, w: r.w - (size.l + size.r) / z, h: r.h - (size.t + size.b) / z };
+      const fits = b.x0 >= ix.x + i && b.y0 >= ix.y + i && b.x1 <= ix.x + ix.w - i && b.y1 <= ix.y + ix.h - i;
+      const u = Math.abs((b.x0 + b.x1) / 2 - (ix.x + ix.w / 2)) / ix.w;
+      const v = Math.abs((b.y0 + b.y1) / 2 - (ix.y + ix.h / 2)) / ix.h;
       const lim = same ? 0.12 : 0.18;
       if (fits && u < lim && v < lim) return { cam: r, zoom: prev.zoom };
     }
@@ -763,7 +772,7 @@ const lerpCam = (a: Cam, b: Cam, t: number): Cam => ({ x: lerp(a.x, b.x, t), y: 
 const looks = (e: Ent, pill?: string, idle?: boolean) =>
   JSON.stringify([e.x, e.y, e.scale ?? 1, e.label, e.sub, e.note, e.gauge, e.color, e.icon, e.ghost, e.down, e.count, e.w, e.d, pill, idle]);
 
-export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKey, over = {}, idle = [], from, replay = 0, fitKey = 0, onZoom }: StageProps) {
+export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKey, over = {}, idle = [], from, replay = 0, fitKey = 0, onZoom, board = false }: StageProps) {
   const reduce = useMemo(() => matchMedia('(prefers-reduced-motion: reduce)').matches, []);
   // no celular o diagrama encolhe, então os rótulos crescem para continuar legíveis
   const [k, setK] = useState(() => (matchMedia('(max-width: 820px)').matches ? 1.45 : 1));
@@ -790,6 +799,19 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
     ro.observe(host);
     return () => ro.disconnect();
   }, []);
+  // no desktop o palco cobre o cartão inteiro, como no original: chips em cima, legenda embaixo e o cartão de dados
+  // ficam por cima da grade, e o diagrama se enquadra no espaço que sobra
+  const [desk, setDesk] = useState(() => matchMedia('(min-width: 1200px)').matches);
+  useEffect(() => {
+    const mq = matchMedia('(min-width: 1200px)');
+    const on = () => setDesk(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  const frame: Frame = useMemo(
+    () => (desk ? { ...size, t: 62, b: 34, l: 10, r: board ? Math.min(306, size.w * 0.46) : 10 } : { ...size, t: 0, b: 0, l: 0, r: 0 }),
+    [size, desk, board],
+  );
 
   const ents = useMemo(() => resolveEnts(lesson, over, k), [lesson, over, k]);
   const lines = useMemo(() => computeLines(ents, visible, links, flows, k), [ents, visible, links, flows, k]);
@@ -845,10 +867,10 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
     const exitLines = prev ? prev.lines.filter((l) => !keys.has(l.key)) : [];
     const camDelay = exits.length ? EXIT_MS * 0.4 : 0;
     end = Math.max(end, camDelay + CAM_MS);
-    const fit = fitCam(sceneBounds(target, k), size, prev && shownCam.current ? shownCam.current : null);
+    const fit = fitCam(sceneBounds(target, k), frame, prev && shownCam.current ? shownCam.current : null);
     const camFrom = prev && dispCam.current ? dispCam.current : fit.cam;
     const spot = [...enters, ...changed].filter((id) => ents[id] && ents[id].kind !== 'zone' && ents[id].kind !== 'queue');
-    return { prev, exits, enterAt, changed, c, linkAt, exitLines, camDelay, camFrom, fit, size, end: reduce ? 0 : end, spot, pkt: lastPkt.current };
+    return { prev, exits, enterAt, changed, c, linkAt, exitLines, camDelay, camFrom, fit, size: frame, end: reduce ? 0 : end, spot, pkt: lastPkt.current };
     // o plano só muda numa troca de passo; o resto do palco acompanha k e o tamanho
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runKey]);
@@ -889,8 +911,8 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
   const prev = plan.prev;
 
   // ───── câmera ─────
-  const sameSize = plan.size.w === size.w && plan.size.h === size.h;
-  const fitNow = useMemo(() => (sameSize ? plan.fit : fitCam(sceneBounds(target, k), size, null)), [sameSize, plan, target, k, size]);
+  const sameSize = plan.size.w === frame.w && plan.size.h === frame.h && plan.size.r === frame.r && plan.size.t === frame.t;
+  const fitNow = useMemo(() => (sameSize ? plan.fit : fitCam(sceneBounds(target, k), frame, null)), [sameSize, plan, target, k, frame]);
   const camP = clamp((t - plan.camDelay) / CAM_MS);
   const base: Cam = sameSize && camP < 1 ? lerpCam(plan.camFrom, fitNow.cam, inOut(camP)) : fitNow.cam;
   const scale = size.w / base.w;
