@@ -16,6 +16,8 @@ export interface Ent {
   scale?: number;
   /** contorno tracejado: algo que ainda não existe ou foi desligado */
   ghost?: boolean;
+  /** fora do ar: corpo apagado, X vermelho no lugar do ícone, etiqueta vermelha e ligações tracejadas */
+  down?: boolean;
   /** medidor acima do objeto: [0..1, nível] */
   gauge?: [number, Level?];
   /** etiqueta de aviso ao lado do objeto */

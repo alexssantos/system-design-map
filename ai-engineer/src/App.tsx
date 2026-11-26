@@ -2,12 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import {
   ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, Clock, FileText, Github, Keyboard, LayoutGrid,
   Lightbulb, ListOrdered, Maximize2, Menu, Minimize2, Moon, Pause, Play, RotateCcw, Search, Settings, Sparkles, Sun,
-  TriangleAlert, AppWindow, X, Globe, ChevronDown,
+  TriangleAlert, AppWindow, X, Globe, ChevronDown, Scan,
 } from 'lucide-react';
 import { flushSync } from 'react-dom';
 import { modules, lessons, lessonIndex } from './course';
 import type { Ent, Lesson, Level, Step } from './types';
-import { Stage } from './Stage';
+import { Stage, type StageScene } from './Stage';
 import { inherited } from './wiring';
 import { Icon } from './icons';
 
@@ -99,6 +99,8 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [replay, setReplay] = useState(0);
   const [full, setFull] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+  const [fitKey, setFitKey] = useState(0);
   const [toast, setToast] = useState('');
   const [done, setDone] = useState(loadDone);
   const [progOpen, setProgOpen] = useState(() => {
@@ -167,8 +169,13 @@ export default function App() {
   // ligações do passo mais as tracejadas herdadas, para nenhum objeto ficar solto
   const wiredLinks = useMemo(() => [...(step.links ?? []), ...inherited(lesson, stepIdx)], [lesson, stepIdx, step]);
   const state = useMemo(() => fold(lesson, stepIdx), [lesson, stepIdx]);
-  const prev = useMemo(() => (stepIdx > 0 ? fold(lesson, stepIdx - 1).visible : []), [lesson, stepIdx]);
-  const fresh = state.visible.filter((id) => !prev.includes(id));
+  // o passo anterior, de onde o Repetir parte (como no original)
+  const fromScene = useMemo<StageScene | undefined>(() => {
+    if (stepIdx === 0) return undefined;
+    const p = fold(lesson, stepIdx - 1);
+    const ps = lesson.steps[stepIdx - 1];
+    return { visible: p.visible, over: p.over, links: [...(ps.links ?? []), ...inherited(lesson, stepIdx - 1)], flows: ps.flow ?? [], pills: ps.pills ?? {}, idle: ps.idle ?? [] };
+  }, [lesson, stepIdx]);
 
   useEffect(() => {
     const on = () => setRoute(parseHash());
@@ -267,6 +274,7 @@ export default function App() {
       }
       const tag = (e.target as HTMLElement)?.tagName;
       if (search || tag === 'INPUT' || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === '0') setFitKey((n) => n + 1);
       if (e.key === 'ArrowRight') forward();
       else if (e.key === 'ArrowLeft') back();
       else if (e.key.toLowerCase() === 'r') setReplay((n) => n + 1);
@@ -555,6 +563,11 @@ export default function App() {
               })}
             </div>
             <div className="stage__tools">
+              {zoomed && (
+                <button className="tool tool--fit" onClick={() => setFitKey((n) => n + 1)} title="Voltar ao diagrama inteiro (0)">
+                  <Scan size={14} /> <span>Ajustar</span>
+                </button>
+              )}
               <button className="tool" onClick={() => setReplay((n) => n + 1)} aria-label="Repetir animação">
                 <RotateCcw size={14} /> <span>Repetir</span>
               </button>
@@ -569,7 +582,6 @@ export default function App() {
               <Stage
                 lesson={lesson}
                 visible={state.visible}
-                fresh={fresh}
                 hot={step.hot ?? []}
                 flows={step.flow ?? []}
                 links={wiredLinks}
@@ -578,6 +590,10 @@ export default function App() {
                 paused={paused}
                 runKey={runKey}
                 over={state.over}
+                from={fromScene}
+                replay={replay}
+                fitKey={fitKey}
+                onZoom={setZoomed}
               />
             </div>
             {step.board && (
