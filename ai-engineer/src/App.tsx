@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, Clock, FileText, Github, Keyboard, LayoutGrid,
   Lightbulb, ListOrdered, Maximize2, Menu, Minimize2, Moon, Pause, Play, RotateCcw, Search, Settings, Sparkles, Sun,
@@ -70,6 +70,24 @@ function loadDone(): Record<string, boolean> {
   }
 }
 
+/** reinicia a animação de entrada do elemento a cada mudança de dep, sem remontá-lo (mantém as transições) */
+function useFresh<T extends HTMLElement>(dep: unknown) {
+  const ref = useRef<T>(null);
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    el.classList.remove('is-fresh');
+    void el.offsetWidth;
+    el.classList.add('is-fresh');
+  }, [dep]);
+  return ref;
+}
+
 export default function App() {
   const [route, setRoute] = useState(parseHash);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') ?? 'light');
@@ -120,6 +138,13 @@ export default function App() {
 
   const { lesson, module, moduleNo, lessonNo } = lessonIndex[route.id];
   const stepIdx = route.step - 1;
+  // como no original: cabeçalho, chips, legenda, linha do tempo e lista entram de novo a cada passo
+  const freshKey = `${route.id}/${route.step}`;
+  const headRef = useFresh<HTMLDivElement>(freshKey);
+  const hudRef = useFresh<HTMLDivElement>(freshKey);
+  const legendRef = useFresh<HTMLDivElement>(freshKey);
+  const tlRef = useFresh<HTMLElement>(freshKey);
+  const learnRef = useFresh<HTMLElement>(freshKey);
   const step = lesson.steps[stepIdx];
   const state = useMemo(() => fold(lesson, stepIdx), [lesson, stepIdx]);
   const prev = useMemo(() => (stepIdx > 0 ? fold(lesson, stepIdx - 1).visible : []), [lesson, stepIdx]);
@@ -418,7 +443,7 @@ export default function App() {
         {drawer && <div className="drawer-backdrop" onClick={() => setDrawer(false)} />}
 
         <main className="sheet">
-          <div className="lesson-head is-fresh" key={`head-${lesson.id}`}>
+          <div className="lesson-head is-fresh" ref={headRef}>
             <div className="crumb">
               {String(moduleNo).padStart(2, '0')}. {module.title} <span>/</span> Lição {lessonNo} de {module.lessons.length}
             </div>
@@ -440,7 +465,7 @@ export default function App() {
           </div>
 
           <section className={`card stage ${step.board ? 'has-board' : ''}`}>
-            <div className="stage__hud is-fresh" key={`hud-${lesson.id}`}>
+            <div className="stage__hud is-fresh" ref={hudRef}>
               {lesson.hud.map((h) => {
                 const v = state.hud[h.id];
                 return (
@@ -496,7 +521,7 @@ export default function App() {
                 ))}
               </div>
             )}
-            <div className="stage__legend is-fresh" key={`lg-${lesson.id}`}>
+            <div className="stage__legend is-fresh" ref={legendRef}>
               <span className="lg lg--req">pedido</span>
               <span className="lg lg--res">resposta</span>
               <span className="lg lg--data">dados</span>
@@ -504,23 +529,28 @@ export default function App() {
             </div>
           </section>
 
-          <section className="card timeline is-fresh" key={`tl-${lesson.id}`}>
+          <section className="card timeline is-fresh" ref={tlRef}>
             <div className="timeline__head">
               <span className="eyebrow">Nesta lição</span>
               <span className="timeline__count">
                 Passo {route.step} de {lesson.steps.length}
               </span>
             </div>
-            <ol className="timeline__steps">
-              {lesson.steps.map((s, i) => (
-                <li key={i} className={i < stepIdx ? 'is-done' : i === stepIdx ? 'is-current' : ''}>
-                  <a href={`#/${lesson.id}/${i + 1}`} aria-label={`Passo ${i + 1}: ${s.nav}`}>
-                    <span className="timeline__dot">{i + 1}</span>
-                    <span className="timeline__label">{s.nav}</span>
-                  </a>
-                </li>
-              ))}
-            </ol>
+            <div className="timeline__track" style={{ '--n': lesson.steps.length } as CSSProperties}>
+              <div className="timeline__rail">
+                <span style={{ width: `${lesson.steps.length > 1 ? (stepIdx / (lesson.steps.length - 1)) * 100 : 0}%` }} />
+              </div>
+              <ol className="timeline__steps">
+                {lesson.steps.map((s, i) => (
+                  <li key={i} className={i < stepIdx ? 'is-done' : i === stepIdx ? 'is-current' : ''}>
+                    <a href={`#/${lesson.id}/${i + 1}`} title={s.title} aria-label={`Passo ${i + 1}: ${s.nav}`} aria-current={i === stepIdx ? 'step' : undefined}>
+                      <span className="timeline__dot">{i + 1}</span>
+                      <span className="timeline__label">{s.nav}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </section>
         </main>
 
@@ -574,7 +604,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="card learn is-fresh" key={`learn-${lesson.id}`}>
+          <section className="card learn is-fresh" ref={learnRef}>
             <span className="eyebrow">Você vai aprender</span>
             <ul>
               {lesson.learn.map((item, i) => (
