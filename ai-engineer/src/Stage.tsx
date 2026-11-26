@@ -104,19 +104,72 @@ function edge(e: Ent, d: P, o: P = e) {
 
 type Box = { x0: number; x1: number; y0: number; y1: number };
 
+/**
+ * Textos presos ao objeto ficam EM CIMA dele (regra prioritária do desenho): de cima para baixo,
+ * medidor, nome, subtítulo e o objeto. Assim as ligações, que saem pela base, não cruzam nomes.
+ * Posições relativas ao centro da base.
+ */
+function textLayout(e: Ent, k: number) {
+  const d = dims(e);
+  const top = -d.h - d.b - (e.kind === 'crowd' ? 24 * (e.scale ?? 1) : 0);
+  const w = (e.label.length * 7.3 + 22 + (e.kind === 'crowd' ? 17 : 0)) * k;
+  if (e.side === 'right' || e.side === 'left') {
+    // ao lado, na altura do meio do corpo, como no original
+    const sgn = e.side === 'right' ? 1 : -1;
+    const lx = sgn * (d.a + 12 * k + w / 2);
+    const ly = -d.h * 0.55 - (e.sub ? 8 * k : 0);
+    return { top, lx, ly, sy: ly + 24 * k, gy: top - 21 * k, w };
+  }
+  const sy = e.sub ? top - 8 * k : 0; // linha de base do subtítulo
+  const ly = (e.sub ? sy - 13 * k : top - 8 * k) - 13 * k; // centro do nome
+  return { top, lx: 0, ly, sy, gy: ly - 28 * k, w };
+}
+
+/** escolhe o lado do nome: em cima, salvo quando ali ele cobriria outro objeto ou outro nome */
+function placeLabels(ents: Record<string, Ent>, k: number) {
+  const ids = Object.keys(ents).filter((id) => ents[id].kind !== 'zone' && ents[id].kind !== 'queue');
+  const taken: Box[] = [];
+  const out: Record<string, Ent> = { ...ents };
+  const clash = (id: string, bxs: Box[]) => {
+    let pen = 0;
+    for (const bx of bxs) {
+      for (let x = bx.x0; x <= bx.x1; x += 6)
+        for (let y = bx.y0; y <= bx.y1; y += 5)
+          for (const o of ids) if (o !== id && sil(ents[o], { x, y })) pen++;
+      for (const t of taken) if (bx.x0 < t.x1 + 4 && bx.x1 > t.x0 - 4 && bx.y0 < t.y1 + 3 && bx.y1 > t.y0 - 3) pen += 20;
+    }
+    return pen;
+  };
+  // de cima para baixo na tela, para os de trás escolherem primeiro
+  for (const id of [...ids].sort((p, q) => ents[p].y - ents[q].y)) {
+    const e = ents[id];
+    let best: { side: Ent['side']; pen: number; bxs: Box[] } | null = null;
+    const sides: Ent['side'][] = e.side ? [e.side] : e.note ? ['top', 'left'] : ['top', 'right', 'left'];
+    for (const side of sides) {
+      const bxs = boxes({ ...e, side, gauge: undefined, note: undefined }, k);
+      const pen = clash(id, bxs) + (side === 'top' ? 0 : 0.5);
+      if (!best || pen < best.pen) best = { side, pen, bxs };
+      if (pen === 0) break;
+    }
+    out[id] = { ...e, side: best!.side };
+    taken.push(...best!.bxs);
+  }
+  return out;
+}
+
 /** caixas dos textos presos ao objeto: etiqueta, subtítulo, medidor e nota */
 function boxes(e: Ent, k: number): Box[] {
   if (e.kind === 'zone' || e.kind === 'queue') return [];
   const d = dims(e);
   const out: Box[] = [];
   const pill = (cx: number, cy: number, w: number) => out.push({ x0: cx - (w / 2) * k, x1: cx + (w / 2) * k, y0: cy - 10 * k, y1: cy + 13 * k });
-  const ly = e.y + d.b + 24 * k;
-  pill(e.x, ly, e.label.length * 7.3 + 22 + (e.kind === 'crowd' ? 17 : 0));
+  const t = textLayout(e, k);
+  pill(e.x + t.lx, e.y + t.ly, e.label.length * 7.3 + 22 + (e.kind === 'crowd' ? 17 : 0));
   if (e.sub) {
     const w = e.sub.length * 6.4 * k;
-    out.push({ x0: e.x - w / 2, x1: e.x + w / 2, y0: ly + 16 * k, y1: ly + 30 * k });
+    out.push({ x0: e.x + t.lx - w / 2, x1: e.x + t.lx + w / 2, y0: e.y + t.sy - 10 * k, y1: e.y + t.sy + 3 * k });
   }
-  if (e.gauge) pill(e.x, e.y - d.h - d.b - 20 * k, 92);
+  if (e.gauge) pill(e.x, e.y + t.gy, 92);
   if (e.note) {
     const w = e.note.length * 7.3 + 22 + 17;
     pill(e.x + d.a + 16 + (e.note.length * 7.3 + 38) * 0.5 * k, e.y - d.h * 0.6, w);
@@ -557,11 +610,13 @@ export interface StageProps {
   runKey: string;
   /** propriedades trocadas pelos passos até aqui */
   over?: Record<string, Partial<Ent>>;
+  /** objetos fora de uso neste passo: esmaecidos */
+  idle?: string[];
 }
 
 const MOVE_MS = 700;
 
-export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused, runKey, over = {} }: StageProps) {
+export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused, runKey, over = {}, idle = [] }: StageProps) {
   const [t, setT] = useState(0);
   const tRef = useRef(0);
   const reduce = useMemo(() => matchMedia('(prefers-reduced-motion: reduce)').matches, []);
@@ -581,8 +636,8 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
       const m = { ...e, ...over[id] };
       out[id] = { ...m, ...snap(m.x, m.y) };
     }
-    return out;
-  }, [lesson, over]);
+    return placeLabels(out, k);
+  }, [lesson, over, k]);
 
   // enquadra a cena em todas as posições da lição inteira, para o quadro não pular entre passos
   const box = useMemo(() => {
@@ -591,8 +646,8 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
       for (const [id, v] of Object.entries(st.set ?? {})) if (lesson.ents[id] && (v.x !== undefined || v.y !== undefined)) all.push({ x: v.x ?? lesson.ents[id].x, y: v.y ?? lesson.ents[id].y });
     const x0 = Math.min(...all.map((e) => e.x)) - 105 * k;
     const x1 = Math.max(...all.map((e) => e.x)) + 105 * k;
-    const y0 = Math.min(...all.map((e) => e.y)) - 125 - 12 * k;
-    const y1 = Math.max(...all.map((e) => e.y)) + 60 + 28 * k;
+    const y0 = Math.min(...all.map((e) => e.y)) - 140 - 30 * k;
+    const y1 = Math.max(...all.map((e) => e.y)) + 50;
     return `${x0} ${y0} ${x1 - x0} ${y1 - y0}`;
   }, [lesson, k]);
 
@@ -894,23 +949,24 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
           const d = dims(e);
           const sc = e.scale ?? 1;
           const flat = e.kind === 'queue';
+          const tl = textLayout(e, k);
           return (
             <g
               key={id + (isNew ? runKey : '')}
               className="ent-pos"
               style={{ transform: `translate(${e.x}px, ${e.y}px)`, transitionDuration: `${dl(MOVE_MS)}ms` }}
             >
-              <g className={`ent ${isNew ? 'is-new' : ''}`} style={isNew ? { animationDelay: `${dl(n * ENT_GAP)}ms` } : undefined}>
+              <g className={`ent ${isNew ? 'is-new' : ''} ${idle.includes(id) ? 'ent--idle' : ''}`} style={isNew ? { animationDelay: `${dl(n * ENT_GAP)}ms` } : undefined}>
                 <g className="ent__body" style={{ transform: `scale(${sc})`, transitionDuration: `${dl(MOVE_MS)}ms` }}>
                   <Body e={e} id={id} />
                 </g>
-                {!flat && <Pill x={0} y={d.b + 24 * k} text={e.label} k={k} icon={e.kind === 'crowd' ? 'users' : undefined} />}
+                {!flat && <Pill x={tl.lx} y={tl.ly} text={e.label} k={k} icon={e.kind === 'crowd' ? 'users' : undefined} />}
                 {!flat && e.sub && (
-                  <text className="ent__sub" x={0} y={d.b + 24 * k + 26 * k} textAnchor="middle" style={{ fontSize: 10.5 * k }}>
+                  <text className="ent__sub" x={tl.lx} y={tl.sy} textAnchor="middle" style={{ fontSize: 10.5 * k }}>
                     {e.sub}
                   </text>
                 )}
-                {e.gauge && <Gauge y={-d.h - d.b - 20 * k} v={e.gauge[0]} level={e.gauge[1]} k={k} />}
+                {e.gauge && <Gauge y={tl.gy} v={e.gauge[0]} level={e.gauge[1]} k={k} />}
                 {e.note && (
                   <g className="pill-in" key={e.note}>
                     <Pill x={d.a + 16 + (e.note.length * 7.3 + 38) * 0.5 * k} y={-d.h * 0.6} text={e.note} tone="warn" icon="warn" k={k} />
@@ -926,10 +982,10 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
         {Object.entries(pills).map(([id, text]) => {
           const e = ents[id];
           if (!e || !visible.includes(id)) return null;
-          const d = dims(e);
+          const t = textLayout(e, k);
           return (
             <g key={id + text + runKey} className="pill-in" style={{ animationDelay: `${dl(drawEnd)}ms` }}>
-              <Pill x={e.x} y={e.y - d.h - d.b - 22 * k} text={text} tone="note" k={k} />
+              <Pill x={e.x} y={e.y + (e.gauge ? t.gy : t.ly) - 28 * k} text={text} tone="note" k={k} />
             </g>
           );
         })}

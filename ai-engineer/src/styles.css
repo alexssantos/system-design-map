@@ -239,7 +239,7 @@ button.btn-pop:active:not(:disabled) { transform: translate(1px, 2px); box-shado
 .board__row.is-mute { color: var(--muted-2); }
 
 /* ───────── SVG do diagrama ───────── */
-.stage-grid { stroke: var(--grid); stroke-width: .8; }
+.stage-grid { stroke: #a8916f; stroke-opacity: .3; stroke-width: .8; } /* igual nos dois temas, como no original */
 .pad { fill: var(--pad); stroke: var(--pad-line); stroke-width: 1.4; stroke-linejoin: round; animation: fx-fade .5s ease-out both; }
 .arrow-head { fill: var(--ink); }
 .is-new .arrow-head { animation: arrow-in .2s ease-out both; }
@@ -349,6 +349,8 @@ path.blk__side[d*='A'] { stroke: var(--blk-edge); stroke-width: 1.8; stroke-line
 .chapter--amber { background: var(--amber); } .chapter--violet { background: var(--violet); }
 .chapter--ink { background: var(--ink); color: var(--paper); }
 .guide__content { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+.ent--idle { opacity: .42; filter: saturate(.3); transition: opacity .4s, filter .4s; }
 .is-fresh { animation: fresh-in .45s cubic-bezier(.2, .7, .2, 1) both; }
 .guide__title, .guide__body, .guide__content > .callout, .guide__content > .changes { animation: guide-in .36s cubic-bezier(.2, .7, .2, 1) both; }
 .guide__title { animation-delay: .13s; } .guide__body { animation-delay: .16s; } .guide__content > .callout { animation-delay: .19s; } .guide__content > .changes { animation-delay: .22s; }

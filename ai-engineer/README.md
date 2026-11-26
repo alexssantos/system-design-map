@@ -36,3 +36,11 @@ Na Vercel: framework Vite, diretório raiz `ai-engineer`.
 
 Conteúdo e código de Alex Santos. O formato de lição (palco animado, linha do tempo e guia lateral) é inspirado no curso
 Designed to Scale, de Dilum Sanjaya. Fonte JetBrains Mono (OFL) e ícones Lucide (ISC).
+
+## Regras do diagrama e verificador
+
+`npm run build` roda antes `npm run check` (`scripts/check-lessons.ts`), que falha se alguma lição quebrar uma regra: tudo o que um passo cita está na tela, e nenhum objeto visível fica sem seta (salvo desligado, `ghost`, ou fora de uso no passo, `idle`). Quando o passo não cita a ligação de um objeto, ela continua tracejada a partir do último passo em que ele estava ligado (`src/wiring.ts`).
+
+`npm run roteiros` gera `docs/ROTEIROS.md`, o roteiro visual de cada lição passo a passo (o que entra, sai, muda, o tráfego e as ligações), para revisar a história sem abrir o site.
+
+Os nomes ficam em cima dos objetos; só vão para o lado quando em cima cobririam outro objeto.
