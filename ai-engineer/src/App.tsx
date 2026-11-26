@@ -4,9 +4,11 @@ import {
   Lightbulb, ListOrdered, Maximize2, Menu, Minimize2, Moon, Pause, Play, RotateCcw, Search, Settings, Sparkles, Sun,
   TriangleAlert, AppWindow, X, Globe, ChevronDown,
 } from 'lucide-react';
+import { flushSync } from 'react-dom';
 import { modules, lessons, lessonIndex } from './course';
 import type { Ent, Lesson, Level, Step } from './types';
 import { Stage } from './Stage';
+import { inherited } from './wiring';
 import { Icon } from './icons';
 
 const CHAPTER: Record<Step['chapter'], [string, string]> = {
@@ -146,6 +148,8 @@ export default function App() {
   const tlRef = useFresh<HTMLElement>(freshKey);
   const learnRef = useFresh<HTMLElement>(freshKey);
   const step = lesson.steps[stepIdx];
+  // ligações do passo mais as tracejadas herdadas, para nenhum objeto ficar solto
+  const wiredLinks = useMemo(() => [...(step.links ?? []), ...inherited(lesson, stepIdx)], [lesson, stepIdx, step]);
   const state = useMemo(() => fold(lesson, stepIdx), [lesson, stepIdx]);
   const prev = useMemo(() => (stepIdx > 0 ? fold(lesson, stepIdx - 1).visible : []), [lesson, stepIdx]);
   const fresh = state.visible.filter((id) => !prev.includes(id));
@@ -155,6 +159,30 @@ export default function App() {
     addEventListener('hashchange', on);
     return () => removeEventListener('hashchange', on);
   }, []);
+
+  /** troca de tema como no original: o tema novo cresce num círculo a partir do botão */
+  const switchTheme = (btn: HTMLElement) => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    const apply = () => {
+      document.documentElement.setAttribute('data-theme', next);
+      flushSync(() => setTheme(next));
+    };
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } };
+    if (!doc.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      apply();
+      return;
+    }
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    doc.startViewTransition(apply).ready.then(() => {
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
+        { duration: 560, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+      );
+    });
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -336,13 +364,20 @@ export default function App() {
           <Menu size={18} />
         </button>
         <a className="brand" href="#/">
+          {/* robô: cabeça violeta, antena verde, tela clara com olhos */}
           <svg className="logo" width="30" height="30" viewBox="0 0 32 32" aria-hidden>
-            <g stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-              <path d="M16 2.6 28.6 8.9 16 15.2 3.4 8.9Z" fill="#a9d99a" />
-              <path d="M3.4 8.9v13.4L16 28.6V15.2Z" fill="#cbbae6" />
-              <path d="M28.6 8.9v13.4L16 28.6V15.2Z" fill="#fcd4ad" />
+            <g stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
+              <path d="M16 7V4.4" fill="none" />
+              <circle cx="16" cy="3.3" r="1.9" fill="#a9d99a" />
+              <rect x="2.4" y="13" width="3" height="6.4" rx="1.3" fill="#fcd4ad" />
+              <rect x="26.6" y="13" width="3" height="6.4" rx="1.3" fill="#fcd4ad" />
+              <rect x="5" y="7" width="22" height="18.4" rx="5.2" fill="#cbbae6" />
+              <rect x="8.6" y="11" width="14.8" height="9.6" rx="3.2" fill="#fbf6ef" />
+              <path d="M13.4 18.1q2.6 1.5 5.2 0" fill="none" />
+              <path d="M11.5 25.4v2.4h9v-2.4" fill="#a9d99a" />
             </g>
-            <path d="M16 6.2l1 1.8 1.9.9-1.9.9-1 1.8-1-1.8-1.9-.9 1.9-.9Z" fill="currentColor" />
+            <circle cx="12.9" cy="14.9" r="1.45" fill="#2a2520" />
+            <circle cx="19.1" cy="14.9" r="1.45" fill="#2a2520" />
           </svg>
           <span className="brand__name">
             AI <span>Engineer</span>
@@ -396,7 +431,7 @@ export default function App() {
             </div>
           )}
         </div>
-        <button className="theme-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Trocar tema">
+        <button className="theme-btn" onClick={(ev) => switchTheme(ev.currentTarget)} aria-label={theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
         <a className="credit" href="https://github.com/alexssantos" target="_blank" rel="noreferrer" title="Alex Santos no GitHub">
@@ -498,7 +533,8 @@ export default function App() {
                 fresh={fresh}
                 hot={step.hot ?? []}
                 flows={step.flow ?? []}
-                links={step.links ?? []}
+                links={wiredLinks}
+                idle={step.idle ?? []}
                 pills={step.pills ?? {}}
                 paused={paused}
                 runKey={runKey}

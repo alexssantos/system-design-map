@@ -25,6 +25,8 @@ export interface Ent {
   d?: number;
   /** crowd: quantas pessoas; queue: quantos itens na fila */
   count?: number;
+  /** onde fica o nome: em cima (padrão e prioridade), ou ao lado quando em cima cobriria outro objeto */
+  side?: 'top' | 'right' | 'left';
 }
 
 /** [de, para, tipo, rótulo opcional] */
@@ -52,6 +54,8 @@ export interface Step {
   flow?: Flow[];
   links?: StaticLink[];
   pills?: Record<string, string>;
+  /** objetos visíveis mas fora de uso neste passo: ficam esmaecidos e não precisam de seta */
+  idle?: string[];
   /** muda propriedades de entidades a partir deste passo (posição, cor, escala, medidor…), com transição */
   set?: Record<string, Partial<Ent>>;
   hud?: Record<string, string | [string, Level]>;
