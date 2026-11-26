@@ -201,7 +201,7 @@ export const gateway: Lesson = {
     },
     {
       nav: 'Fallback',
-      set: { p1: { gauge: [1, 'bad'] }, p2: { gauge: [0.35, 'good'] } },
+      set: { p1: { gauge: [1, 'bad'], down: true }, p2: { gauge: [0.35, 'good'] } },
       chapter: 'tecnica',
       title: 'Retentativa e fallback num lugar só',
       body: [
@@ -217,7 +217,7 @@ export const gateway: Lesson = {
     },
     {
       nav: 'Roteamento',
-      set: { p1: { gauge: [0.45, 'good'] }, p2: { ghost: true, gauge: undefined } },
+      set: { p1: { gauge: [0.45, 'good'], down: false }, p2: { ghost: true, gauge: undefined } },
       chapter: 'tecnica',
       title: 'Nem toda pergunta precisa do modelo grande',
       body: [

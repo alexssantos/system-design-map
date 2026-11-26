@@ -233,7 +233,9 @@ button.btn-pop:active:not(:disabled) { transform: translate(1px, 2px); box-shado
 .tool--full { display: none; width: 30px; padding: 0; justify-content: center; }
 .stage__canvas { position: absolute; inset: 62px 10px 34px; transition: right .35s ease; }
 .stage.has-board .stage__canvas { right: min(306px, 46%); }
-.stage-svg { width: 100%; height: 100%; display: block; overflow: visible; font-family: var(--font); }
+.stage-svg { width: 100%; height: 100%; display: block; overflow: hidden; font-family: var(--font); touch-action: pan-y; user-select: none; }
+.stage-svg.is-zoomed { cursor: grab; touch-action: none; }
+.stage-svg.is-zoomed:active { cursor: grabbing; }
 .stage__legend { position: absolute; left: 14px; bottom: 10px; display: flex; gap: 14px; font-size: 10.5px; color: var(--muted); z-index: 2; }
 .lg { display: inline-flex; align-items: center; gap: 6px; }
 .lg::before { content: ''; width: 9px; height: 9px; border-radius: 50%; border: 1.3px solid var(--blk-edge); }
@@ -290,12 +292,16 @@ button.btn-pop:active:not(:disabled) { transform: translate(1px, 2px); box-shado
 .person circle { fill: #fbf6ef; stroke: var(--ink); stroke-width: 1.3; }
 .pill__icon { color: var(--ink); }
 .pill--warn .pill__box { fill: var(--amber); }
+/* fora do ar, como no original: etiqueta vermelha com alerta, corpo apagado e X vermelho no lugar do ícone */
+.pill--down .pill__box { fill: var(--red-soft); stroke: var(--red-ink); }
+.pill--down text, .pill--down .pill__icon { fill: var(--red-ink); color: var(--red-ink); font-weight: 700; }
+.blk--down .blk__side, .blk--down .blk__top, .blk--down .blk__shade, .blk--down .blk__ring { filter: saturate(.15); opacity: .55; }
+.blk--down .blk__icon { color: #d0453a; }
 .gauge__icon { color: var(--ink-2); }
 .gauge__track { fill: var(--line); }
 .gauge__bar { transform-box: fill-box; transform-origin: 0 50%; transition: transform .6s cubic-bezier(.2, .7, .2, 1), fill .4s; fill: #7fc278; }
 .gauge--warn .gauge__bar { fill: #efb041; } .gauge--bad .gauge__bar { fill: #e5534b; }
 .gauge__pct { font-size: 11.5px; font-weight: 800; fill: var(--ink); font-variant-numeric: tabular-nums; }
-.ent.is-new { animation: ent-drop .72s cubic-bezier(.3, .75, .35, 1) both; }
 .stage-svg.is-paused * { animation-play-state: paused !important; }
 .spot { fill: var(--pad); stroke: #5fae57; stroke-width: 2.4; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 50%; animation: spot 1.5s ease-out both; }
 .fx-ring, .fx-x { transform-box: fill-box; transform-origin: 50% 50%; }
