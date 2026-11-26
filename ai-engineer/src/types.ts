@@ -1,5 +1,6 @@
 export type Color = 'yellow' | 'blue' | 'green' | 'violet' | 'rust' | 'sand' | 'teal' | 'pink' | 'ink';
-export type EntKind = 'block' | 'plate' | 'cyl';
+/** block: serviço · plate: pessoa/origem · cyl: armazenamento · crowd: muitos usuários · zone: área no chão · queue: fila com itens */
+export type EntKind = 'block' | 'plate' | 'cyl' | 'crowd' | 'zone' | 'queue';
 export type PktKind = 'req' | 'res' | 'data' | 'err' | 'tok';
 export type Level = 'good' | 'warn' | 'bad';
 
@@ -11,6 +12,19 @@ export interface Ent {
   icon: string;
   label: string;
   sub?: string;
+  /** escala do corpo (1 = normal); muda com transição entre passos */
+  scale?: number;
+  /** contorno tracejado: algo que ainda não existe ou foi desligado */
+  ghost?: boolean;
+  /** medidor acima do objeto: [0..1, nível] */
+  gauge?: [number, Level?];
+  /** etiqueta de aviso ao lado do objeto */
+  note?: string;
+  /** zone/queue: comprimento e largura no chão (px, ao longo dos eixos da malha) */
+  w?: number;
+  d?: number;
+  /** crowd: quantas pessoas; queue: quantos itens na fila */
+  count?: number;
 }
 
 /** [de, para, tipo, rótulo opcional] */
@@ -38,6 +52,8 @@ export interface Step {
   flow?: Flow[];
   links?: StaticLink[];
   pills?: Record<string, string>;
+  /** muda propriedades de entidades a partir deste passo (posição, cor, escala, medidor…), com transição */
+  set?: Record<string, Partial<Ent>>;
   hud?: Record<string, string | [string, Level]>;
   board?: { title: string; items: BoardItem[] };
   changes?: string[];

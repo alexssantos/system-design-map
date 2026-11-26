@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, Clock, FileText, Folder, Github, Keyboard, LayoutGrid,
+  ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, Clock, FileText, Github, Keyboard, LayoutGrid,
   Lightbulb, ListOrdered, Maximize2, Menu, Minimize2, Moon, Pause, Play, RotateCcw, Search, Settings, Sparkles, Sun,
-  TriangleAlert, AppWindow, X,
+  TriangleAlert, AppWindow, X, Globe, ChevronDown,
 } from 'lucide-react';
 import { modules, lessons, lessonIndex } from './course';
-import type { Lesson, Level, Step } from './types';
+import type { Ent, Lesson, Level, Step } from './types';
 import { Stage } from './Stage';
 import { Icon } from './icons';
 
@@ -46,6 +46,7 @@ function rich(text: string): ReactNode[] {
 function fold(lesson: Lesson, upto: number) {
   const visible: string[] = [];
   const hud: Record<string, [string, Level | undefined]> = {};
+  const over: Record<string, Partial<Ent>> = {};
   let learn = 0;
   for (let i = 0; i <= upto; i++) {
     const s = lesson.steps[i];
@@ -55,9 +56,10 @@ function fold(lesson: Lesson, upto: number) {
     }
     for (const id of s.add ?? []) if (!visible.includes(id)) visible.push(id);
     for (const [k, v] of Object.entries(s.hud ?? {})) hud[k] = typeof v === 'string' ? [v, undefined] : v;
+    for (const [k, v] of Object.entries(s.set ?? {})) over[k] = { ...over[k], ...v };
     if (s.learn !== undefined) learn = s.learn;
   }
-  return { visible, hud, learn };
+  return { visible, hud, learn, over };
 }
 
 function loadDone(): Record<string, boolean> {
@@ -80,6 +82,41 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [done, setDone] = useState(loadDone);
   const guideRef = useRef<HTMLDivElement>(null);
+  const winRef = useRef<HTMLDivElement>(null);
+  const lastPos = useRef({ id: '', step: 0 });
+  const slide = useMemo(() => {
+    const p = lastPos.current;
+    const v = p.id === route.id && route.step < p.step ? -14 : 14;
+    lastPos.current = { id: route.id, step: route.step };
+    return v;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.id, route.step]);
+  const [lang, setLang] = useState(false);
+
+  // no desktop a janela inteira é desenhada para 1672x920 e escalada para caber na tela
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = winRef.current;
+      if (!el) return;
+      const w = innerWidth;
+      const h = innerHeight;
+      const desk = w >= 1200 && h >= 560;
+      document.documentElement.dataset.layout = desk ? 'desktop' : w >= 821 ? 'tablet' : 'stack';
+      if (desk) {
+        const z = Math.min(1, w / 1672, h / 920);
+        el.style.zoom = String(z);
+        el.style.width = `${w / z}px`;
+        el.style.height = `${h / z}px`;
+      } else {
+        el.style.zoom = '';
+        el.style.width = '';
+        el.style.height = '';
+      }
+    };
+    fit();
+    addEventListener('resize', fit);
+    return () => removeEventListener('resize', fit);
+  }, []);
 
   const { lesson, module, moduleNo, lessonNo } = lessonIndex[route.id];
   const stepIdx = route.step - 1;
@@ -110,6 +147,7 @@ export default function App() {
 
   useEffect(() => {
     setPaused(false);
+    saveRecent(lesson.id, route.step);
     guideRef.current?.scrollTo({ top: 0 });
     if (route.step === lesson.steps.length && !done[lesson.id]) {
       const next = { ...done, [lesson.id]: true };
@@ -181,8 +219,10 @@ export default function App() {
   const tree = (
     <>
       <div className="tree-root">
-        <Folder size={18} fill="currentColor" />
-        <b>Curso</b>
+        <svg width="22" height="18" viewBox="0 0 20 16" aria-hidden>
+          <path d="M1 3a2 2 0 0 1 2-2h4.3l2 2.2H17a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2Z" fill="currentColor" />
+        </svg>
+        <span>Curso</span>
         <span className="tree-root__meta">{total} lições</span>
         <button className="drawer-close tool" onClick={() => setDrawer(false)} aria-label="Fechar menu">
           <X size={16} />
@@ -218,14 +258,14 @@ export default function App() {
                           onClick={() => setDrawer(false)}
                           aria-current={l.id === lesson.id ? 'page' : undefined}
                         >
-                          {done[l.id] ? <Check size={14} className="lesson__mark is-done" /> : <FileText size={14} className="lesson__mark" />}
+                          {done[l.id] ? <Check size={15} className="lesson__mark is-done" /> : <FileText size={15} className="lesson__mark" />}
                           <span className="lesson__title">{l.title}</span>
                         </a>
                       </li>
                     ) : (
                       <li key={l.soon} className="lesson is-soon">
                         <span title="Em breve">
-                          <FileText size={14} className="lesson__mark" />
+                          <FileText size={15} className="lesson__mark" />
                           <span className="lesson__title">{l.soon}</span>
                           <em>em breve</em>
                         </span>
@@ -265,19 +305,19 @@ export default function App() {
   );
 
   return (
-    <div className={`window ${full ? 'is-full' : ''}`}>
+    <div className={`window ${full ? 'is-full' : ''}`} ref={winRef}>
       <header className="topbar">
         <button className="menu-btn tool" onClick={() => setDrawer(true)} aria-label="Abrir menu">
           <Menu size={18} />
         </button>
         <a className="brand" href="#/">
           <svg className="logo" width="30" height="30" viewBox="0 0 32 32" aria-hidden>
-            <g stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
-              <path d="M16 4l10 5-10 5L6 9z" fill="var(--green)" />
-              <path d="M6 9v11l10 5V14z" fill="var(--violet)" />
-              <path d="M26 9v11l-10 5V14z" fill="var(--orange)" />
+            <g stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+              <path d="M16 2.6 28.6 8.9 16 15.2 3.4 8.9Z" fill="#a9d99a" />
+              <path d="M3.4 8.9v13.4L16 28.6V15.2Z" fill="#cbbae6" />
+              <path d="M28.6 8.9v13.4L16 28.6V15.2Z" fill="#fcd4ad" />
             </g>
-            <circle cx="16" cy="9" r="1.9" fill="currentColor" />
+            <path d="M16 6.2l1 1.8 1.9.9-1.9.9-1 1.8-1-1.8-1.9-.9 1.9-.9Z" fill="currentColor" />
           </svg>
           <span className="brand__name">
             AI <span>Engineer</span>
@@ -290,7 +330,7 @@ export default function App() {
               className={`nav__item ${n.soon ? '' : 'is-active btn-pop'}`}
               onClick={() => n.soon && setToast(n.soon)}
             >
-              <n.icon size={16} /> {n.label}
+              <n.icon size={17} /> {n.label}
             </button>
           ))}
         </nav>
@@ -299,15 +339,50 @@ export default function App() {
           <span className="search__hint">Buscar lições e conceitos…</span>
           <kbd>Ctrl K</kbd>
         </button>
-        <button className="theme-btn tool" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Trocar tema">
+        <div className="lang">
+          <button className={`lang__btn ${lang ? 'is-open' : ''}`} onClick={() => setLang((v) => !v)} aria-haspopup="menu" aria-expanded={lang} aria-label="Idioma">
+            <Globe size={15} /> PT <ChevronDown size={14} className="lang__chev" />
+          </button>
+          {lang && (
+            <div className="lang__menu" role="menu">
+              <div className="lang__head">Idioma</div>
+              <button className="lang__item is-on" role="menuitem" onClick={() => setLang(false)}>
+                <span className="lang__tile">PT</span>
+                <span className="lang__names">
+                  <b>Português</b>
+                  <span>Brasil</span>
+                </span>
+              </button>
+              <button
+                className="lang__item"
+                role="menuitem"
+                onClick={() => {
+                  setLang(false);
+                  setToast('A versão em inglês chega em breve');
+                }}
+              >
+                <span className="lang__tile">EN</span>
+                <span className="lang__names">
+                  <b>English</b>
+                  <span>Inglês</span>
+                </span>
+                <span className="lang__soon">em breve</span>
+              </button>
+            </div>
+          )}
+        </div>
+        <button className="theme-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Trocar tema">
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <a className="credit" href="https://github.com/alexssantos" target="_blank" rel="noreferrer">
+        <a className="credit" href="https://github.com/alexssantos" target="_blank" rel="noreferrer" title="Alex Santos no GitHub">
           <span className="credit__x">
             <Github size={15} />
           </span>
           <span className="credit__text">
-            feito por <b>@alexssantos</b>
+            <small>feito por</small>
+            <b>
+              <span>@alexssantos</span>
+            </b>
           </span>
         </a>
       </header>
@@ -332,7 +407,10 @@ export default function App() {
                 <Github size={15} />
               </span>
               <span className="credit__text">
-                feito por <b>@alexssantos</b>
+                <small>feito por</small>
+                <b>
+                  <span>@alexssantos</span>
+                </b>
               </span>
             </a>
           </div>
@@ -340,7 +418,7 @@ export default function App() {
         {drawer && <div className="drawer-backdrop" onClick={() => setDrawer(false)} />}
 
         <main className="sheet">
-          <div className="lesson-head">
+          <div className="lesson-head is-fresh" key={`head-${lesson.id}`}>
             <div className="crumb">
               {String(moduleNo).padStart(2, '0')}. {module.title} <span>/</span> Lição {lessonNo} de {module.lessons.length}
             </div>
@@ -362,7 +440,7 @@ export default function App() {
           </div>
 
           <section className={`card stage ${step.board ? 'has-board' : ''}`}>
-            <div className="stage__hud">
+            <div className="stage__hud is-fresh" key={`hud-${lesson.id}`}>
               {lesson.hud.map((h) => {
                 const v = state.hud[h.id];
                 return (
@@ -399,6 +477,7 @@ export default function App() {
                 pills={step.pills ?? {}}
                 paused={paused}
                 runKey={runKey}
+                over={state.over}
               />
             </div>
             {step.board && (
@@ -417,7 +496,7 @@ export default function App() {
                 ))}
               </div>
             )}
-            <div className="stage__legend">
+            <div className="stage__legend is-fresh" key={`lg-${lesson.id}`}>
               <span className="lg lg--req">pedido</span>
               <span className="lg lg--res">resposta</span>
               <span className="lg lg--data">dados</span>
@@ -425,7 +504,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="card timeline">
+          <section className="card timeline is-fresh" key={`tl-${lesson.id}`}>
             <div className="timeline__head">
               <span className="eyebrow">Nesta lição</span>
               <span className="timeline__count">
@@ -455,7 +534,7 @@ export default function App() {
                 {chapterLabel}
               </span>
             </div>
-            <div className="guide__content" ref={guideRef} key={`${lesson.id}-${route.step}`}>
+            <div className="guide__content" ref={guideRef} key={`${lesson.id}-${route.step}`} style={{ ['--slide' as string]: `${slide}px` }}>
               <h2 className="guide__title">{step.title}</h2>
               <div className="guide__body">
                 {step.body.map((p, i) => (
@@ -495,7 +574,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="card learn">
+          <section className="card learn is-fresh" key={`learn-${lesson.id}`}>
             <span className="eyebrow">Você vai aprender</span>
             <ul>
               {lesson.learn.map((item, i) => (
@@ -521,72 +600,234 @@ export default function App() {
           <Settings size={15} /> {toast}
         </div>
       )}
-      {search && <SearchDialog onClose={() => setSearch(false)} onGo={go} />}
+      {search && <SearchDialog onClose={() => setSearch(false)} onGo={go} done={done} />}
     </div>
   );
 }
 
-function SearchDialog({ onClose, onGo }: { onClose: () => void; onGo: (id: string, n: number) => void }) {
+function loadRecent(): { id: string; step: number }[] {
+  try {
+    const v = JSON.parse(localStorage.getItem('aie-recent') ?? '[]');
+    return Array.isArray(v) ? v.filter((r) => r && lessonIndex[r.id]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(id: string, step: number) {
+  try {
+    const next = [{ id, step }, ...loadRecent().filter((r) => r.id !== id)].slice(0, 4);
+    localStorage.setItem('aie-recent', JSON.stringify(next));
+  } catch {
+    /* armazenamento indisponível */
+  }
+}
+
+type Hit =
+  | { kind: 'lesson'; id: string; step: number; title: string; text: string; meta?: string; color: string }
+  | { kind: 'step'; id: string; step: number; title: string; text: string; meta: string };
+
+function FolderGlyph({ color }: { color: string }) {
+  return (
+    <svg className="folder" width="20" height="16" viewBox="0 0 20 16" aria-hidden style={{ color }}>
+      <path d="M1 3a2 2 0 0 1 2-2h4.2l2 2.3H17a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2Z" />
+      <path className="folder__lip" d="M1 6.3h18" />
+    </svg>
+  );
+}
+
+const TOTAL_STEPS = lessons.reduce((n, l) => n + l.steps.length, 0);
+const SUGGEST = ['RAG', 'agente', 'cache', 'evals', 'tokens', 'injeção'];
+
+function SearchDialog({ onClose, onGo, done }: { onClose: () => void; onGo: (id: string, n: number) => void; done: Record<string, boolean> }) {
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const results = useMemo(() => {
-    const needle = norm(q.trim());
-    const out: { id: string; step: number; title: string; where: string }[] = [];
-    for (const l of lessons) {
-      const { module } = lessonIndex[l.id];
-      if (!needle || norm(l.title + ' ' + l.subtitle).includes(needle)) out.push({ id: l.id, step: 1, title: l.title, where: module.title });
-      if (needle)
-        l.steps.forEach((s, i) => {
-          if (norm(s.title + ' ' + s.body.join(' ')).includes(needle)) out.push({ id: l.id, step: i + 1, title: s.title, where: `${l.title} · passo ${i + 1}` });
+  const needle = norm(q.trim());
+
+  // grupos: sem busca, recentes e módulos; com busca, lições e passos
+  const groups = useMemo(() => {
+    const out: { title: string; side: string; hits: Hit[] }[] = [];
+    const lessonHit = (l: Lesson, step = 1, text?: string, withMeta = false): Hit => {
+      const { module, moduleNo } = lessonIndex[l.id];
+      return {
+        kind: 'lesson',
+        id: l.id,
+        step,
+        title: l.title,
+        text: text ?? l.subtitle,
+        meta: withMeta ? `${String(moduleNo).padStart(2, '0')} · ${module.title}` : undefined,
+        color: module.color,
+      };
+    };
+    if (!needle) {
+      const rec = loadRecent();
+      if (rec.length)
+        out.push({
+          title: 'Recentes',
+          side: String(rec.length),
+          hits: rec.map((r) => {
+            const l = lessonIndex[r.id].lesson;
+            return lessonHit(l, r.step, `Continuar no passo ${r.step}: ${l.steps[r.step - 1]?.title ?? ''}`, true);
+          }),
         });
+      modules.forEach((m, mi) => {
+        const real = m.lessons.filter((l): l is Lesson => 'id' in l);
+        if (!real.length) return;
+        out.push({
+          title: `${String(mi + 1).padStart(2, '0')} · ${m.title}`,
+          side: `${real.filter((l) => done[l.id]).length}/${m.lessons.length} feitos`,
+          hits: real.map((l) => lessonHit(l)),
+        });
+      });
+      return out;
     }
-    return out.slice(0, 30);
-  }, [q]);
-  useEffect(() => setSel(0), [q]);
-  const pick = (r: (typeof results)[number]) => {
-    onGo(r.id, r.step);
+    const ls = lessons.filter((l) => norm(l.title + ' ' + l.subtitle).includes(needle)).map((l) => lessonHit(l, 1, undefined, true));
+    if (ls.length) out.push({ title: 'Lições', side: String(ls.length), hits: ls });
+    const st: Hit[] = [];
+    for (const l of lessons)
+      l.steps.forEach((s2, i) => {
+        if (norm(s2.title + ' ' + s2.body.join(' ')).includes(needle))
+          st.push({ kind: 'step', id: l.id, step: i + 1, title: s2.title, text: s2.body[0].replace(/\*\*|`/g, ''), meta: l.title });
+      });
+    if (st.length) out.push({ title: 'Passos', side: String(st.length), hits: st.slice(0, 24) });
+    return out;
+  }, [needle, done]);
+
+  const flat = groups.flatMap((g) => g.hits);
+  useEffect(() => setSel(0), [needle]);
+  useEffect(() => {
+    listRef.current?.querySelector('.is-sel')?.scrollIntoView({ block: 'nearest' });
+  }, [sel]);
+  const pick = (h: Hit) => {
+    onGo(h.id, h.step);
     onClose();
   };
+
+  // realça o trecho buscado
+  const mark = (text: string) => {
+    if (!needle) return text;
+    const i = norm(text).indexOf(needle);
+    if (i < 0) return text;
+    return (
+      <>
+        {text.slice(0, i)}
+        <mark>{text.slice(i, i + needle.length)}</mark>
+        {text.slice(i + needle.length)}
+      </>
+    );
+  };
+
+  let n = -1;
   return (
-    <div className="sx" role="dialog" aria-modal="true" aria-label="Buscar">
+    <div className="sx is-open" role="dialog" aria-modal="true" aria-label="Buscar">
       <div className="sx__backdrop" onClick={onClose} />
-      <div className="sx__dialog card">
+      <div className="sx__dialog">
         <div className="sx__bar">
-          <Search size={17} />
+          <Search size={19} className="sx__glass" />
           <input
+            ref={inputRef}
             autoFocus
             className="sx__input"
-            placeholder="Buscar lições e conceitos…"
+            placeholder="Buscar lições, conceitos, passos…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.min(results.length - 1, s + 1)); }
-              if (e.key === 'ArrowUp') { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
-              if (e.key === 'Enter' && results[sel]) pick(results[sel]);
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSel((v) => Math.min(flat.length - 1, v + 1));
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSel((v) => Math.max(0, v - 1));
+              }
+              if (e.key === 'Enter' && flat[sel]) pick(flat[sel]);
             }}
           />
-          <button className="sx__esc" onClick={onClose}>
-            Esc
+          {q && (
+            <button className="sx__clear" onClick={() => { setQ(''); inputRef.current?.focus(); }}>
+              limpar
+            </button>
+          )}
+          <button className="sx__esc" onClick={onClose} aria-label="Fechar">
+            esc
           </button>
         </div>
-        <ul className="sx__list">
-          {results.map((r, i) => (
-            <li key={`${r.id}-${r.step}-${i}`}>
-              <button className={i === sel ? 'is-sel' : ''} onMouseEnter={() => setSel(i)} onClick={() => pick(r)}>
-                <FileText size={15} />
-                <span>
-                  <b>{r.title}</b>
-                  <small>{r.where}</small>
-                </span>
-              </button>
-            </li>
+        <div className="sx__list" ref={listRef}>
+          {groups.map((g) => (
+            <div key={g.title}>
+              <div className="sx__group">
+                <span>{g.title}</span>
+                <span>{g.side}</span>
+              </div>
+              {g.hits.map((h) => {
+                n += 1;
+                const i = n;
+                const l = lessonIndex[h.id].lesson;
+                return (
+                  <button
+                    key={`${g.title}-${h.id}-${h.step}`}
+                    className={`sx__item ${i === sel ? 'is-sel' : ''}`}
+                    onMouseMove={() => sel !== i && setSel(i)}
+                    onClick={() => pick(h)}
+                  >
+                    {h.kind === 'lesson' ? (
+                      <span className="sx__icon sx__icon--lesson">
+                        <FolderGlyph color={h.color} />
+                      </span>
+                    ) : (
+                      <span className="sx__icon sx__icon--step">{h.step}</span>
+                    )}
+                    <span className="sx__main">
+                      <span className="sx__title">
+                        {mark(h.title)}
+                        {h.meta && <span className="sx__meta">{h.meta}</span>}
+                      </span>
+                      <span className="sx__text">{mark(h.text)}</span>
+                    </span>
+                    <span className="sx__side">
+                      {h.kind === 'lesson' ? (
+                        <span className={`sx__steps ${done[h.id] ? 'sx__done' : ''}`}>{done[h.id] ? 'feita' : `${l.steps.length} passos`}</span>
+                      ) : (
+                        <span className="sx__kind">passo</span>
+                      )}
+                      <kbd className="sx__enter">↵</kbd>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           ))}
-          {results.length === 0 && <li className="sx__empty">Nada encontrado para “{q}”.</li>}
-        </ul>
+          {flat.length === 0 && (
+            <div className="sx__empty">
+              <div className="sx__empty-title">Nada encontrado para “{q}”</div>
+              <p>Tente um termo mais curto, ou um destes:</p>
+              <div className="sx__chips">
+                {SUGGEST.map((w) => (
+                  <button key={w} onClick={() => setQ(w)}>
+                    {w}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="sx__foot">
-          <span>{results.length} resultados</span>
-          <span>↑ ↓ navegar · Enter abrir</span>
+          <span>
+            <kbd>↑</kbd>
+            <kbd>↓</kbd> mover
+          </span>
+          <span>
+            <kbd>↵</kbd> abrir
+          </span>
+          <span>
+            <kbd>esc</kbd> fechar
+          </span>
+          <span className="sx__count">
+            {lessons.length} lições · {TOTAL_STEPS} passos
+          </span>
         </div>
       </div>
     </div>

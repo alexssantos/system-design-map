@@ -24,6 +24,14 @@ Na Vercel: framework Vite, diretório raiz `ai-engineer`.
 - `src/Stage.tsx`: desenho e animação do diagrama.
 - `src/App.tsx` e `src/styles.css`: interface.
 
+## O diagrama
+
+- Malha isométrica de 28x14. Cada entidade se encaixa num vértice da malha e as ligações correm só nos dois eixos, em L com o canto arredondado, tocando a borda dos objetos.
+- Sequência de cada passo: entidades novas caem uma por vez, as ligações novas se desenham, um pulso verde abre na base, e só então o tráfego começa. O pacote para antes da ponta da seta e pulsa ao chegar (num vai e volta, só no fim da volta).
+- Tipos de objeto: `block`, `plate`, `cyl`, `crowd` (muitos usuários), `zone` (área no chão), `queue` (fila com itens). Opções: `scale`, `ghost`, `gauge`, `note`.
+- `set` num passo muda propriedades de entidades (posição, escala, medidor, aviso, cor) com transição suave.
+- No desktop a janela é desenhada para 1672x920 e escalada para caber na tela, como no curso de referência.
+
 ## Créditos
 
 Conteúdo e código de Alex Santos. O formato de lição (palco animado, linha do tempo e guia lateral) é inspirado no curso
