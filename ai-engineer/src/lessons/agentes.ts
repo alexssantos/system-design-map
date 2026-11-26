@@ -258,7 +258,7 @@ export const finetuningVsRag: Lesson = {
     llm: { x: 560, y: 260, color: 'violet', icon: 'brain', label: 'modelo base' },
     rag: { x: 330, y: 390, kind: 'cyl', color: 'pink', icon: 'db', label: 'RAG', sub: 'conhecimento' },
     ft: { x: 790, y: 190, color: 'rust', icon: 'grad', label: 'fine-tuning', sub: 'muda os pesos' },
-    small: { x: 790, y: 390, color: 'green', icon: 'cpu', label: 'modelo pequeno ajustado' },
+    small: { x: 790, y: 390, color: 'green', icon: 'cpu', label: 'modelo pequeno ajustado', scale: 0.7 },
   },
   steps: [
     {

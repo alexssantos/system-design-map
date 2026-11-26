@@ -102,20 +102,52 @@ function edge(e: Ent, d: P, o: P = e) {
   return hi;
 }
 
-/** o ponto cai sobre o objeto como ele aparece na tela (base, corpo ou etiqueta)? */
-function inside(e: Ent, p: P, pad = 8) {
+type Box = { x0: number; x1: number; y0: number; y1: number };
+
+/** caixas dos textos presos ao objeto: etiqueta, subtítulo, medidor e nota */
+function boxes(e: Ent, k: number): Box[] {
+  if (e.kind === 'zone' || e.kind === 'queue') return [];
+  const d = dims(e);
+  const out: Box[] = [];
+  const pill = (cx: number, cy: number, w: number) => out.push({ x0: cx - (w / 2) * k, x1: cx + (w / 2) * k, y0: cy - 10 * k, y1: cy + 13 * k });
+  const ly = e.y + d.b + 24 * k;
+  pill(e.x, ly, e.label.length * 7.3 + 22 + (e.kind === 'crowd' ? 17 : 0));
+  if (e.sub) {
+    const w = e.sub.length * 6.4 * k;
+    out.push({ x0: e.x - w / 2, x1: e.x + w / 2, y0: ly + 16 * k, y1: ly + 30 * k });
+  }
+  if (e.gauge) pill(e.x, e.y - d.h - d.b - 20 * k, 92);
+  if (e.note) {
+    const w = e.note.length * 7.3 + 22 + 17;
+    pill(e.x + d.a + 16 + (e.note.length * 7.3 + 38) * 0.5 * k, e.y - d.h * 0.6, w);
+  }
+  return out;
+}
+
+const inBox = (p: P, bx: Box, pad: number) => p.x > bx.x0 - pad && p.x < bx.x1 + pad && p.y > bx.y0 - pad && p.y < bx.y1 + pad;
+
+/** o ponto cai sobre o objeto como ele aparece na tela (corpo ou textos dele)? */
+function inside(e: Ent, p: P, k = 1, pad = 8) {
   if (e.kind === 'zone') return 0;
   const { a, b, h, L, M } = dims(e);
   let dy = p.y - e.y;
   if (dy < 0) dy = dy > -h ? 0 : dy + h; // o corpo sobe a partir da base
   if (L !== undefined && M !== undefined) {
-    const k = uv(p.x - e.x, dy);
-    return Math.abs(k.p) < L + pad && Math.abs(k.q) < M + pad ? 2 : 0;
+    const q = uv(p.x - e.x, dy);
+    return Math.abs(q.p) < L + pad && Math.abs(q.q) < M + pad ? 2 : 0;
   }
   if (Math.abs(p.x - e.x) / (a + pad) + Math.abs(dy) / (b + pad / 2) < 1) return 2;
-  const half = e.label.length * 3.7 + 14;
-  if (Math.abs(p.x - e.x) < half && p.y > e.y + b + 10 && p.y < e.y + b + 38) return 1;
+  for (const bx of boxes(e, k)) if (inBox(p, bx, 5)) return 2;
   return 0;
+}
+
+/** distância do ponto ao segmento */
+function segDist(p: P, a: P, b: P) {
+  const vx = b.x - a.x;
+  const vy = b.y - a.y;
+  const l2 = vx * vx + vy * vy || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * vx + (p.y - a.y) * vy) / l2));
+  return Math.hypot(p.x - a.x - vx * t, p.y - a.y - vy * t);
 }
 
 interface Route {
@@ -189,7 +221,7 @@ function build(pts: P[], tail: number): Route {
 }
 
 /** traça a ligação de A até B só nos eixos da malha: reta, em L ou em Z */
-function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
+function route(A: Ent, B: Ent, others: Ent[], arrow: boolean, k = 1, taken: P[][] = [], bounds?: Box): Route {
   const dx = B.x - A.x;
   const dy = B.y - A.y;
   // B = A + s·(2,1) + t·(2,−1)
@@ -229,11 +261,22 @@ function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
     [su, ls, tv, lt],
     [tv, lt, su, ls],
   ] as [P, number, P, number][]) {
-    const e1 = edge(A, d1) + GAP;
-    const e2 = edge(B, neg(d2)) + GAP;
-    const corner = add(A, d1, l1);
-    const pen = l1 < e1 + room || l2 < e2 + room ? 100 : 0; // o canto cairia dentro de um dos objetos
-    cands.push({ pts: [add(A, d1, e1), corner, add(B, neg(d2), e2)], pen, z: 0 });
+    // a saída e a chegada podem deslizar um pouco pela face, para duas ligações não correrem coladas
+    const mo = 0.6 * edge(A, d2);
+    const mp = 0.6 * edge(B, d1);
+    for (const o of [0, 14, -14]) {
+      if (Math.abs(o) > mo) continue;
+      for (const q of [0, 14, -14]) {
+        if (Math.abs(q) > mp) continue;
+        const sA = add(A, d2, o); // saída deslocada pela face de A
+        const sB = add(B, d1, -q); // chegada deslocada pela face de B
+        const corner = add(sA, d1, l1 - q);
+        const e1 = edge(A, d1, sA) + GAP;
+        const e2 = edge(B, neg(d2), sB) + GAP;
+        const pen = l1 - q < e1 + room || l2 - o < e2 + room ? 100 : 0; // o canto cairia dentro de um dos objetos
+        cands.push({ pts: [add(sA, d1, e1), corner, add(sB, neg(d2), e2)], pen, z: o || q ? 0.4 : 0 });
+      }
+    }
   }
   // em Z: sai e chega pelo mesmo eixo, com um degrau no meio (objetos grandes ou próximos)
   for (const [d1, l1, d2, l2] of [
@@ -242,13 +285,20 @@ function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
   ] as [P, number, P, number][]) {
     const eA = edge(A, d1) + GAP;
     const eB = edge(B, neg(d1)) + GAP;
-    const k = (eA + l1 - eB) / 2; // o degrau fica no meio do vão livre
-    const c1 = add(A, d1, k);
-    const c2 = add(c1, d2, l2);
-    const r = Math.min(R, l2 / 2);
-    let pen = k - eA < r + 4 || l1 - k - eB < r + 4 ? 100 : 0;
-    if (l2 < 2 * R) pen += 3; // degrau pequeno demais vira um "zigue-zague": só se não houver outra saída
-    cands.push({ pts: [add(A, d1, eA), c1, c2, add(B, neg(d1), eB)], pen, z: 1 });
+    // o degrau fica no meio do vão livre; perto de uma das pontas, se o meio estiver ocupado
+    for (const [frac, z] of [
+      [0.5, 1],
+      [0.25, 1.1],
+      [0.75, 1.1],
+    ]) {
+      const m = eA + (l1 - eA - eB) * frac;
+      const c1 = add(A, d1, m);
+      const c2 = add(c1, d2, l2);
+      const r = Math.min(R, l2 / 2);
+      let pen = m - eA < r + 4 || l1 - m - eB < r + 4 ? 100 : 0;
+      if (l2 < 2 * R) pen += 3; // degrau pequeno demais vira um "zigue-zague": só se não houver outra saída
+      cands.push({ pts: [add(A, d1, eA), c1, c2, add(B, neg(d1), eB)], pen, z });
+    }
   }
   for (const c of cands) {
     for (let i = 1; i < c.pts.length; i++) {
@@ -257,8 +307,13 @@ function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
       const l = Math.hypot(q.x - p.x, q.y - p.y);
       for (let k = 0; k < l; k += 8) {
         const pt = { x: p.x + ((q.x - p.x) * k) / l, y: p.y + ((q.y - p.y) * k) / l };
-        for (const other of others) c.pen += 5 * inside(other, pt);
+        for (const other of others) c.pen += 5 * inside(other, pt, k);
         if (sil(A, pt) || sil(B, pt)) c.pen += 50; // nunca passa por cima ou por baixo das pontas
+        for (const bx of [...boxes(A, k), ...boxes(B, k)]) if (inBox(pt, bx, 4)) c.pen += 10; // nem pelos textos delas
+        // não sai do quadro
+        if (bounds && !inBox(pt, bounds, 0)) c.pen += 6;
+        // não corre colada em outra ligação
+        for (const t of taken) for (let j = 1; j < t.length; j++) if (segDist(pt, t[j - 1], t[j]) < 9) c.pen += 2;
       }
     }
   }
@@ -560,13 +615,23 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
   const lines = useMemo(() => {
     const out: { key: string; a: string; b: string; style: string; arrow: boolean; both: boolean; r: Route; startDir: P }[] = [];
     const seen = new Set<string>();
+    const taken: P[][] = [];
+    // limite do quadro: as posições da lição com a margem dos objetos
+    const all = Object.values(ents);
+    const frame: Box = {
+      x0: Math.min(...all.map((e) => e.x)) - 70,
+      x1: Math.max(...all.map((e) => e.x)) + 70,
+      y0: Math.min(...all.map((e) => e.y)) - 90,
+      y1: Math.max(...all.map((e) => e.y)) + 50,
+    };
     const push = (a: string, b: string, style: string, arrow: boolean) => {
       const key = [a, b].sort().join('~');
       if (seen.has(key) || !ents[a] || !ents[b] || !visible.includes(a) || !visible.includes(b)) return;
       seen.add(key);
       const others = visible.filter((id) => id !== a && id !== b && ents[id]).map((id) => ents[id]);
       const both = arrow && flows.some((x) => x[0] === b && x[1] === a) && flows.some((x) => x[0] === a && x[1] === b);
-      const r = route(ents[a], ents[b], others, arrow);
+      const r = route(ents[a], ents[b], others, arrow, k, taken, frame);
+      taken.push(r.pts);
       // direção de saída de A (para a seta de volta)
       const p0 = r.pts[0];
       const p1 = r.pts[1];
@@ -576,7 +641,7 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
     for (const [a, b, style] of links) push(a, b, style ?? 'solid', false);
     for (const [a, b] of flows) push(a, b, 'solid', true);
     return out;
-  }, [links, flows, ents, visible]);
+  }, [links, flows, ents, visible, k]);
 
   // quais ligações são novas neste passo (comparando com o que estava desenhado antes)
   const drawn = useRef<Set<string>>(new Set());
@@ -658,20 +723,31 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
       pkt = { ...p, kind, back };
     }
     if (path && active[3]) {
-      // o rótulo fica acima ou abaixo da ligação, do lado mais longe das outras etiquetas
-      const { x: mx, y: my } = path.mid;
+      // o rótulo vai num trecho da ligação onde não cobre objeto, texto nem outra ligação
       const half = (active[3].length * 7.3 + 22) * 0.5 * k;
-      const clash = (y: number) =>
-        visible.reduce((worst, id) => {
-          const e = ents[id];
-          if (!e) return worst;
-          const d = dims(e);
-          const spots = [e.y + d.b + 24 * k, e.y - d.h / 2];
-          const near = Math.abs(e.x - mx) < half + 60 ? Math.min(...spots.map((sy) => Math.abs(sy - y))) : 999;
-          return Math.min(worst, near);
-        }, 999);
-      const off = 24 * k;
-      const y = clash(my + off) >= clash(my - off) ? my + off : my - off;
+      const score = (cx: number, cy: number) => {
+        const bx: Box = { x0: cx - half, x1: cx + half, y0: cy - 10 * k, y1: cy + 13 * k };
+        let pen = 0;
+        for (let x = bx.x0; x <= bx.x1; x += 8)
+          for (let y = bx.y0; y <= bx.y1; y += 6) {
+            const pt = { x, y };
+            for (const id of visible) {
+              const e = ents[id];
+              if (e && e.kind !== 'zone' && inside(e, pt, k, 4)) pen += 3;
+            }
+            for (const l of lines) if (l.r !== path && l.r.pts.some((q, j) => j > 0 && segDist(pt, l.r.pts[j - 1], q) < 3)) pen += 1;
+          }
+        return pen;
+      };
+      let best = { x: path.mid.x, y: path.mid.y + 24 * k, pen: Infinity };
+      for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.22, 0.78])
+        for (const off of [0, 24 * k, -24 * k]) {
+          const q = at(path, path.len * t);
+          const sc = score(q.x, q.y + off) + Math.abs(t - 0.5) * 2 + (off ? 0.5 : 0);
+          if (sc < best.pen) best = { x: q.x, y: q.y + off, pen: sc };
+        }
+      const mx = best.x;
+      const y = best.y;
       label = { x: mx, y, text: active[3], kind };
     }
   }

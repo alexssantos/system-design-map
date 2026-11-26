@@ -164,9 +164,9 @@ export const gateway: Lesson = {
     b: { x: 110, y: 380, kind: 'crowd', count: 6, color: 'sand', icon: 'building', label: 'time de suporte' },
     gw: { x: 370, y: 275, color: 'blue', icon: 'route', label: 'gateway' },
     obs: { x: 370, y: 430, kind: 'cyl', color: 'pink', icon: 'scan', label: 'logs e custos' },
-    p1: { x: 640, y: 150, color: 'violet', icon: 'brain', label: 'provedor A', sub: 'modelo grande' },
-    p2: { x: 790, y: 280, color: 'rust', icon: 'brain', label: 'provedor B' },
-    p3: { x: 640, y: 400, color: 'green', icon: 'cpu', label: 'modelo pequeno', sub: 'barato e rápido' },
+    p1: { x: 640, y: 150, color: 'violet', icon: 'brain', label: 'provedor A', sub: 'modelo grande', scale: 1.15 },
+    p2: { x: 870, y: 445, color: 'rust', icon: 'brain', label: 'provedor B' },
+    p3: { x: 640, y: 400, color: 'green', icon: 'cpu', label: 'modelo pequeno', sub: 'barato e rápido', scale: 0.7 },
   },
   steps: [
     {
