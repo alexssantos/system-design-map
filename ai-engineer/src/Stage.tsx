@@ -1220,10 +1220,20 @@ export function Stage({ lesson, visible, hot, flows, links, pills, paused, runKe
         <pattern id="iso" width="28" height="14" y="-7" patternUnits="userSpaceOnUse">
           <path d="M0 7 L14 0 L28 7 L14 14 Z" fill="none" className="stage-grid" />
         </pattern>
-        <radialGradient id="fade" cx="50%" cy="50%" r="56%">
-          <stop offset="0%" stopColor="#fff" stopOpacity="1" />
-          <stop offset="70%" stopColor="#fff" stopOpacity=".55" />
-          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        {/* como a referência: elipse centrada no quadro, raio 0,56 da largura e achatada a 0,6 na vertical,
+            então num palco largo a grade só some nas laterais */}
+        <radialGradient
+          id="fade"
+          gradientUnits="userSpaceOnUse"
+          cx={f(cam.x + cam.w / 2)}
+          cy={f(cam.y + cam.h / 2)}
+          r={f(cam.w * 0.56)}
+          gradientTransform={`translate(${f(cam.x + cam.w / 2)} ${f(cam.y + cam.h / 2)}) scale(1 0.6) translate(${f(-(cam.x + cam.w / 2))} ${f(-(cam.y + cam.h / 2))})`}
+        >
+          <stop offset="0" stopColor="#fff" />
+          <stop offset=".42" stopColor="#fff" stopOpacity=".92" />
+          <stop offset=".78" stopColor="#fff" stopOpacity=".35" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </radialGradient>
         <mask id="fade-mask">
           <rect x={f(cam.x)} y={f(cam.y)} width={f(cam.w)} height={f(cam.h)} fill="url(#fade)" />
