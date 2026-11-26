@@ -329,9 +329,10 @@ function reverse(r: Route, startDir: P): Route {
 }
 
 /** polígono com cantos arredondados */
-function rounded(pts: P[], r: number) {
+function rounded(pts: P[], radius: number | number[]) {
   let d = '';
   pts.forEach((p, i) => {
+    const r = Array.isArray(radius) ? radius[i] : radius;
     const prev = pts[(i - 1 + pts.length) % pts.length];
     const next = pts[(i + 1) % pts.length];
     const l1 = Math.hypot(p.x - prev.x, p.y - prev.y);
@@ -344,6 +345,11 @@ function rounded(pts: P[], r: number) {
   });
   return d + 'Z';
 }
+
+/** raios dos cantos do casco (topo, lateral de cima à direita, lateral de baixo, base, ...) e do tampo, medidos no original */
+const sideR = (h: number) => Math.min(9, h * 0.45);
+const hullR = (h: number) => [10, sideR(h), sideR(h), 12, sideR(h), sideR(h)];
+const topR = (h: number) => [10, sideR(h), 6, sideR(h)];
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -413,13 +419,13 @@ function Body({ e, id }: { e: Ent; id: string }) {
         { x: -a, y: 0 },
         { x: -a, y: -h },
       ],
-      16,
+      hullR(h),
     );
     return (
       <g className="crowd">
         <path className="blk__shadow" d={plate} transform="translate(0 8)" />
         <path className="crowd__plate" d={plate} />
-        <path className="crowd__top" d={rounded([{ x: 0, y: -h - b }, { x: a, y: -h }, { x: 0, y: -h + b }, { x: -a, y: -h }], 16)} />
+        <path className="crowd__top" d={rounded([{ x: 0, y: -h - b }, { x: a, y: -h }, { x: 0, y: -h + b }, { x: -a, y: -h }], topR(h))} />
         {spots.map((p, i) => (
           <g key={i} transform={`translate(${f(p.x)} ${f(p.y)})`} className="person">
             <rect x={-6.5} y={-20} width={13} height={20} rx={6.5} style={{ fill: PEOPLE[(i * 5) % PEOPLE.length] }} />
@@ -451,9 +457,8 @@ function Body({ e, id }: { e: Ent; id: string }) {
     { x: -a, y: 0 },
     { x: -a, y: -h },
   ];
-  // cantos bem arredondados, como no original: nenhum objeto tem ponta
-  const rr = 15; // o corpo já é escalado por fora
-  const hull = rounded(hullPts, rr);
+  // cantos arredondados com os raios do original: topo 10, laterais 9 (ou menos, se o lado for curto), base 12
+  const hull = rounded(hullPts, hullR(h));
   const top = rounded(
     [
       { x: 0, y: -h - b },
@@ -461,7 +466,7 @@ function Body({ e, id }: { e: Ent; id: string }) {
       { x: 0, y: -h + b },
       { x: -a, y: -h },
     ],
-    rr,
+    topR(h),
   );
   const right = `M${a + 2},${-h} L0,${-h + b} L0,${b + 2} L${a + 2},2 Z`;
   const clip = `clip-${id}`;
@@ -475,7 +480,7 @@ function Body({ e, id }: { e: Ent; id: string }) {
       <path className="blk__side" d={hull} />
       <path className="blk__shade" d={right} clipPath={`url(#${clip})`} />
       <path className="blk__top" d={top} clipPath={`url(#${clip})`} />
-      <path className="blk__edge" d={`M${f(-a + rr)},${f(-h + rr / 2)} L0,${-h + b} L${f(a - rr)},${f(-h + rr / 2)} M0,${-h + b} V${f(Math.max(-h + b, b - rr * 0.7))}`} />
+      <path className="blk__edge" d={`M${-a},${-h} L${f(-a * 0.128)},${f(-h + b - b * 0.128)} Q0,${-h + b} ${f(a * 0.128)},${f(-h + b - b * 0.128)} L${a},${-h}`} />
       <path className="blk__hull" d={hull} />
       <g className="blk__icon" transform={`translate(${-iconSize / 2} ${-h - iconSize / 2})`}>
         <Icon name={e.icon} size={iconSize} />
@@ -741,9 +746,9 @@ export function Stage({ lesson, visible, fresh, hot, flows, links, pills, paused
       };
       let best = { x: path.mid.x, y: path.mid.y + 24 * k, pen: Infinity };
       for (const t of [0.5, 0.4, 0.6, 0.3, 0.7, 0.22, 0.78])
-        for (const off of [0, 24 * k, -24 * k]) {
+        for (const off of [0, 24 * k, -24 * k, 46 * k, -46 * k, 68 * k, -68 * k]) {
           const q = at(path, path.len * t);
-          const sc = score(q.x, q.y + off) + Math.abs(t - 0.5) * 2 + (off ? 0.5 : 0);
+          const sc = score(q.x, q.y + off) + Math.abs(t - 0.5) * 2 + Math.abs(off) / (24 * k) * 0.5;
           if (sc < best.pen) best = { x: q.x, y: q.y + off, pen: sc };
         }
       const mx = best.x;

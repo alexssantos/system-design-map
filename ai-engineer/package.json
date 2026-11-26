@@ -1,7 +1,7 @@
 {
   "name": "ai-engineer-course",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "description": "Curso visual de AI Engineering com lições animadas passo a passo, para preparação de entrevistas.",
   "scripts": {
