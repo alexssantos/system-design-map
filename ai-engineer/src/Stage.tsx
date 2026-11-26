@@ -30,7 +30,7 @@ const HOLD_MS = 700; // pausa antes de repetir
 const INSET = 20; // o pacote para antes da ponta da seta
 const ARRIVE_MS = 460;
 
-const GAP = 2; // folga entre a ponta da seta e a borda do objeto
+const GAP = 6; // folga entre a ponta da seta e o desenho do objeto: a seta nunca encosta nem passa por baixo
 const R = 9; // raio do canto das ligações
 const U = { x: 2 / Math.sqrt(5), y: 1 / Math.sqrt(5) }; // eixo que desce para a direita
 const V = { x: 2 / Math.sqrt(5), y: -1 / Math.sqrt(5) }; // eixo que sobe para a direita
@@ -71,15 +71,35 @@ function snap(x: number, y: number): P {
   return { x: m * 14, y: n * 7 };
 }
 
-/** distância do centro da base até a borda, numa direção unitária */
-function edge(e: Ent, d: P) {
-  const { a, b, L, M } = dims(e);
-  if (e.kind === 'cyl') return 1 / Math.hypot(d.x / a, d.y / b);
+/** o ponto cai dentro do desenho do objeto (base varrida pela altura, como aparece na tela)? */
+function sil(e: Ent, p: P) {
+  const { a, b, h, L, M } = dims(e);
+  const dx = p.x - e.x;
+  let dy = p.y - e.y;
+  if (dy < 0) dy = dy > -h ? 0 : dy + h; // o corpo sobe a partir da base
+  if (e.kind === 'cyl') return (dx / a) ** 2 + (dy / b) ** 2 < 1;
   if (L !== undefined && M !== undefined) {
-    const { p, q } = uv(d.x, d.y);
-    return 1 / Math.max(Math.abs(p) / L, Math.abs(q) / M);
+    const k = uv(dx, dy);
+    return Math.abs(k.p) < L && Math.abs(k.q) < M;
   }
-  return 1 / (Math.abs(d.x) / a + Math.abs(d.y) / b);
+  return Math.abs(dx) / a + Math.abs(dy) / b < 1;
+}
+
+/** quanto andar de o na direção d até sair do desenho do objeto */
+function edge(e: Ent, d: P, o: P = e) {
+  if (e.kind === 'zone') return 0;
+  let lo = 0;
+  let hi = 4;
+  while (sil(e, add(o, d, hi)) && hi < 600) {
+    lo = hi;
+    hi += 8;
+  }
+  for (let i = 0; i < 10; i++) {
+    const m = (lo + hi) / 2;
+    if (sil(e, add(o, d, m))) lo = m;
+    else hi = m;
+  }
+  return hi;
 }
 
 /** o ponto cai sobre o objeto como ele aparece na tela (base, corpo ou etiqueta)? */
@@ -128,7 +148,47 @@ const add = (p: P, d: P, k: number): P => ({ x: p.x + d.x * k, y: p.y + d.y * k 
 const neg = (d: P): P => ({ x: -d.x, y: -d.y });
 const f = (n: number) => Math.round(n * 100) / 100;
 
-/** traça a ligação de A até B nos eixos da malha */
+/** monta a ligação a partir dos pontos (início, cantos, ponta), com cantos arredondados */
+function build(pts: P[], tail: number): Route {
+  const dirOf = (p: P, q: P) => {
+    const l = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    return { x: (q.x - p.x) / l, y: (q.y - p.y) / l, l };
+  };
+  const start = pts[0];
+  const tip = pts[pts.length - 1];
+  const last = dirOf(pts[pts.length - 2], tip);
+  const end = add(tip, last, -tail);
+  let d = `M${f(start.x)},${f(start.y)}`;
+  const poly: P[] = [start];
+  let best = { l: -1, mid: start };
+  for (let i = 1; i < pts.length; i++) {
+    const g = dirOf(pts[i - 1], pts[i]);
+    if (g.l > best.l) best = { l: g.l, mid: { x: (pts[i - 1].x + pts[i].x) / 2, y: (pts[i - 1].y + pts[i].y) / 2 } };
+  }
+  for (let i = 1; i < pts.length - 1; i++) {
+    const c = pts[i];
+    const din = dirOf(pts[i - 1], c);
+    const dout = dirOf(c, pts[i + 1]);
+    const r = Math.min(R, din.l / 2, dout.l / 2);
+    const c1 = add(c, din, -r);
+    const c2 = add(c, dout, r);
+    d += ` L${f(c1.x)},${f(c1.y)} Q${f(c.x)},${f(c.y)} ${f(c2.x)},${f(c2.y)}`;
+    poly.push(c1);
+    for (let j = 1; j < 6; j++) {
+      const k = j / 6;
+      poly.push({
+        x: (1 - k) * (1 - k) * c1.x + 2 * (1 - k) * k * c.x + k * k * c2.x,
+        y: (1 - k) * (1 - k) * c1.y + 2 * (1 - k) * k * c.y + k * k * c2.y,
+      });
+    }
+    poly.push(c2);
+  }
+  d += ` L${f(end.x)},${f(end.y)}`;
+  poly.push(tip);
+  return { d, ...polyline(poly), start, end: tip, endDir: { x: last.x, y: last.y }, mid: best.mid };
+}
+
+/** traça a ligação de A até B só nos eixos da malha: reta, em L ou em Z */
 function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
   const dx = B.x - A.x;
   const dy = B.y - A.y;
@@ -137,81 +197,74 @@ function route(A: Ent, B: Ent, others: Ent[], arrow: boolean): Route {
   const t = (dx / 2 - dy) / 2;
   const tail = arrow ? 4 : 0; // a linha termina um pouco antes da ponta, que é desenhada à parte
 
-  const straight = (dir: P): Route => {
-    const start = add(A, dir, edge(A, dir) + GAP);
-    const tip = add(B, neg(dir), edge(B, dir) + GAP);
-    const end = add(tip, dir, -tail);
-    const pl = polyline([start, tip]);
-    return {
-      d: `M${f(start.x)},${f(start.y)} L${f(end.x)},${f(end.y)}`,
-      ...pl,
-      start,
-      end: tip,
-      endDir: dir,
-      mid: { x: (start.x + tip.x) / 2, y: (start.y + tip.y) / 2 },
-    };
-  };
-
-  const len1 = Math.hypot(dx, dy) || 1;
   // praticamente alinhados num eixo: linha reta
-  if (Math.abs(s) * Math.sqrt(5) < 6) return straight({ x: Math.sign(t || 1) * V.x, y: Math.sign(t || 1) * V.y });
-  if (Math.abs(t) * Math.sqrt(5) < 6) return straight({ x: Math.sign(s || 1) * U.x, y: Math.sign(s || 1) * U.y });
+  if (Math.abs(s) * S5 < 6 || Math.abs(t) * S5 < 6) {
+    const dir = Math.abs(s) * S5 < 6 ? { x: Math.sign(t || 1) * V.x, y: Math.sign(t || 1) * V.y } : { x: Math.sign(s || 1) * U.x, y: Math.sign(s || 1) * U.y };
+    return build([add(A, dir, edge(A, dir) + GAP), add(B, neg(dir), edge(B, neg(dir)) + GAP)], tail);
+  }
 
   const su = { x: Math.sign(s) * U.x, y: Math.sign(s) * U.y };
   const tv = { x: Math.sign(t) * V.x, y: Math.sign(t) * V.y };
-  const ls = Math.abs(s) * Math.sqrt(5);
-  const lt = Math.abs(t) * Math.sqrt(5);
+  const ls = Math.abs(s) * S5;
+  const lt = Math.abs(t) * S5;
+  const room = R + 6;
 
-  // duas opções de L: primeiro no eixo U e depois no V, ou o contrário
-  const options = [
-    { d1: su, l1: ls, d2: tv, l2: lt },
-    { d1: tv, l1: lt, d2: su, l2: ls },
-  ].map((o) => {
-    const corner = add(A, o.d1, o.l1);
-    const e1 = edge(A, o.d1) + GAP;
-    const e2 = edge(B, o.d2) + GAP;
-    let pen = 0;
-    if (o.l1 < e1 + R + 6 || o.l2 < e2 + R + 6) pen += 100; // o canto cairia dentro de um dos objetos
-    for (const other of others) {
-      for (let k = e1; k < o.l1; k += 8) pen += 5 * inside(other, add(A, o.d1, k));
-      for (let k = 0; k < o.l2 - e2; k += 8) pen += 5 * inside(other, add(corner, o.d2, k));
+  const cands: { pts: P[]; pen: number; z: number }[] = [];
+  // reta deslocada: quase alinhados num eixo, a linha corre paralela ao eixo, deslocada metade da diferença
+  for (const [d1, l1, d2, l2] of [
+    [su, ls, tv, lt],
+    [tv, lt, su, ls],
+  ] as [P, number, P, number][]) {
+    const half = l2 / 2;
+    if (half > 0.75 * Math.min(edge(A, d2), edge(B, d2))) continue;
+    const oA = add(A, d2, half);
+    const oB = add(B, d2, -half);
+    const e1 = edge(A, d1, oA) + GAP;
+    const e2 = edge(B, neg(d1), oB) + GAP;
+    const pen = l1 < e1 + e2 + 12 ? 100 : 0;
+    cands.push({ pts: [add(oA, d1, e1), add(oB, d1, -e2)], pen, z: -1 });
+  }
+  // em L: um eixo e depois o outro
+  for (const [d1, l1, d2, l2] of [
+    [su, ls, tv, lt],
+    [tv, lt, su, ls],
+  ] as [P, number, P, number][]) {
+    const e1 = edge(A, d1) + GAP;
+    const e2 = edge(B, neg(d2)) + GAP;
+    const corner = add(A, d1, l1);
+    const pen = l1 < e1 + room || l2 < e2 + room ? 100 : 0; // o canto cairia dentro de um dos objetos
+    cands.push({ pts: [add(A, d1, e1), corner, add(B, neg(d2), e2)], pen, z: 0 });
+  }
+  // em Z: sai e chega pelo mesmo eixo, com um degrau no meio (objetos grandes ou próximos)
+  for (const [d1, l1, d2, l2] of [
+    [su, ls, tv, lt],
+    [tv, lt, su, ls],
+  ] as [P, number, P, number][]) {
+    const eA = edge(A, d1) + GAP;
+    const eB = edge(B, neg(d1)) + GAP;
+    const k = (eA + l1 - eB) / 2; // o degrau fica no meio do vão livre
+    const c1 = add(A, d1, k);
+    const c2 = add(c1, d2, l2);
+    const r = Math.min(R, l2 / 2);
+    let pen = k - eA < r + 4 || l1 - k - eB < r + 4 ? 100 : 0;
+    if (l2 < 2 * R) pen += 3; // degrau pequeno demais vira um "zigue-zague": só se não houver outra saída
+    cands.push({ pts: [add(A, d1, eA), c1, c2, add(B, neg(d1), eB)], pen, z: 1 });
+  }
+  for (const c of cands) {
+    for (let i = 1; i < c.pts.length; i++) {
+      const p = c.pts[i - 1];
+      const q = c.pts[i];
+      const l = Math.hypot(q.x - p.x, q.y - p.y);
+      for (let k = 0; k < l; k += 8) {
+        const pt = { x: p.x + ((q.x - p.x) * k) / l, y: p.y + ((q.y - p.y) * k) / l };
+        for (const other of others) c.pen += 5 * inside(other, pt);
+        if (sil(A, pt) || sil(B, pt)) c.pen += 50; // nunca passa por cima ou por baixo das pontas
+      }
     }
-    return { ...o, corner, e1, e2, pen };
-  });
-  // prefere o L com menos colisões; empate: o canto mais à frente (mais embaixo na tela)
-  options.sort((p, q) => p.pen - q.pen || q.corner.y - p.corner.y);
-  const o = options[0];
-  if (o.pen >= 100) {
-    // nenhum L cabe: liga borda a borda em linha reta (caso raro, objetos muito próximos)
-    const dir = { x: dx / len1, y: dy / len1 };
-    const start = add(A, dir, edge(A, dir) + GAP);
-    const tip = add(B, neg(dir), edge(B, dir) + GAP);
-    const end = add(tip, dir, -tail);
-    return { d: `M${f(start.x)},${f(start.y)} L${f(end.x)},${f(end.y)}`, ...polyline([start, tip]), start, end: tip, endDir: dir, mid: { x: (start.x + tip.x) / 2, y: (start.y + tip.y) / 2 } };
   }
-  const start = add(A, o.d1, o.e1);
-  const c1 = add(o.corner, o.d1, -R);
-  const c2 = add(o.corner, o.d2, R);
-  const tip = add(B, neg(o.d2), o.e2);
-  const end = add(tip, o.d2, -tail);
-  // pontos da curva para o pacote seguir o canto
-  const curve: P[] = [];
-  for (let i = 1; i < 6; i++) {
-    const k = i / 6;
-    curve.push({
-      x: (1 - k) * (1 - k) * c1.x + 2 * (1 - k) * k * o.corner.x + k * k * c2.x,
-      y: (1 - k) * (1 - k) * c1.y + 2 * (1 - k) * k * o.corner.y + k * k * c2.y,
-    });
-  }
-  const longFirst = o.l1 - o.e1 >= o.l2 - o.e2;
-  return {
-    d: `M${f(start.x)},${f(start.y)} L${f(c1.x)},${f(c1.y)} Q${f(o.corner.x)},${f(o.corner.y)} ${f(c2.x)},${f(c2.y)} L${f(end.x)},${f(end.y)}`,
-    ...polyline([start, c1, ...curve, c2, tip]),
-    start,
-    end: tip,
-    endDir: o.d2,
-    mid: longFirst ? { x: (start.x + c1.x) / 2, y: (start.y + c1.y) / 2 } : { x: (c2.x + tip.x) / 2, y: (c2.y + tip.y) / 2 },
-  };
+  // menos colisões; depois L antes de Z; empate: o canto mais à frente (mais embaixo na tela)
+  cands.sort((p, q) => p.pen - q.pen || p.z - q.z || q.pts[1].y - p.pts[1].y);
+  return build(cands[0].pts, tail);
 }
 
 function reverse(r: Route, startDir: P): Route {
@@ -305,13 +358,13 @@ function Body({ e, id }: { e: Ent; id: string }) {
         { x: -a, y: 0 },
         { x: -a, y: -h },
       ],
-      10,
+      16,
     );
     return (
       <g className="crowd">
         <path className="blk__shadow" d={plate} transform="translate(0 8)" />
         <path className="crowd__plate" d={plate} />
-        <path className="crowd__top" d={rounded([{ x: 0, y: -h - b }, { x: a, y: -h }, { x: 0, y: -h + b }, { x: -a, y: -h }], 9)} />
+        <path className="crowd__top" d={rounded([{ x: 0, y: -h - b }, { x: a, y: -h }, { x: 0, y: -h + b }, { x: -a, y: -h }], 16)} />
         {spots.map((p, i) => (
           <g key={i} transform={`translate(${f(p.x)} ${f(p.y)})`} className="person">
             <rect x={-6.5} y={-20} width={13} height={20} rx={6.5} style={{ fill: PEOPLE[(i * 5) % PEOPLE.length] }} />
@@ -343,7 +396,9 @@ function Body({ e, id }: { e: Ent; id: string }) {
     { x: -a, y: 0 },
     { x: -a, y: -h },
   ];
-  const hull = rounded(hullPts, 9);
+  // cantos bem arredondados, como no original: nenhum objeto tem ponta
+  const rr = 15; // o corpo já é escalado por fora
+  const hull = rounded(hullPts, rr);
   const top = rounded(
     [
       { x: 0, y: -h - b },
@@ -351,7 +406,7 @@ function Body({ e, id }: { e: Ent; id: string }) {
       { x: 0, y: -h + b },
       { x: -a, y: -h },
     ],
-    6,
+    rr,
   );
   const right = `M${a + 2},${-h} L0,${-h + b} L0,${b + 2} L${a + 2},2 Z`;
   const clip = `clip-${id}`;
@@ -364,8 +419,8 @@ function Body({ e, id }: { e: Ent; id: string }) {
       <path className="blk__shadow" d={hull} transform="translate(0 9)" />
       <path className="blk__side" d={hull} />
       <path className="blk__shade" d={right} clipPath={`url(#${clip})`} />
-      <path className="blk__top" d={top} />
-      <path className="blk__edge" d={`M${-a + 6},${-h + 3} L0,${-h + b} L${a - 6},${-h + 3} M0,${-h + b} V${b - 5}`} />
+      <path className="blk__top" d={top} clipPath={`url(#${clip})`} />
+      <path className="blk__edge" d={`M${f(-a + rr)},${f(-h + rr / 2)} L0,${-h + b} L${f(a - rr)},${f(-h + rr / 2)} M0,${-h + b} V${f(Math.max(-h + b, b - rr * 0.7))}`} />
       <path className="blk__hull" d={hull} />
       <g className="blk__icon" transform={`translate(${-iconSize / 2} ${-h - iconSize / 2})`}>
         <Icon name={e.icon} size={iconSize} />
