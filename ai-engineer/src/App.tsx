@@ -101,6 +101,22 @@ export default function App() {
   const [full, setFull] = useState(false);
   const [toast, setToast] = useState('');
   const [done, setDone] = useState(loadDone);
+  const [progOpen, setProgOpen] = useState(() => {
+    try {
+      return localStorage.getItem('aie-progress-open') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleProg = () =>
+    setProgOpen((o) => {
+      try {
+        localStorage.setItem('aie-progress-open', o ? '0' : '1');
+      } catch {
+        /* sem armazenamento */
+      }
+      return !o;
+    });
   const guideRef = useRef<HTMLDivElement>(null);
   const winRef = useRef<HTMLDivElement>(null);
   const lastPos = useRef({ id: '', step: 0 });
@@ -331,17 +347,40 @@ export default function App() {
           );
         })}
       </nav>
-      <div className="card progress">
-        <div className="progress__head">
+      <section className={`card progress ${progOpen ? 'is-open' : ''}`}>
+        <button className="progress__head" type="button" aria-expanded={progOpen} aria-controls="progress-body" onClick={toggleProg}>
           <span className="eyebrow">Progresso</span>
           <span className="progress__pct">
             {doneCount} / {total}
           </span>
+          <ChevronRight size={14} strokeWidth={2.2} className="progress__chev" aria-hidden />
+        </button>
+        <div className="progress__body" id="progress-body">
+          <div className="progress__clip">
+            <div className="bar">
+              <span style={{ width: `${Math.round((doneCount / total) * 100)}%` }} />
+            </div>
+            <ul className="progress__list">
+              {modules.map((m) => {
+                const real = m.lessons.filter((l): l is Lesson => 'id' in l);
+                const n = real.filter((l) => done[l.id]).length;
+                const state = n > 0 && n === m.lessons.length ? 'is-on' : n > 0 ? 'is-part' : '';
+                return (
+                  <li key={m.id}>
+                    <span className={`check ${state}`}>
+                      <Check size={11} strokeWidth={3} aria-hidden />
+                    </span>
+                    <span className="progress__label">{m.title}</span>
+                    <span className="progress__count">
+                      {n}/{m.lessons.length}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
-        <div className="bar">
-          <span style={{ width: `${(doneCount / total) * 100}%` }} />
-        </div>
-      </div>
+      </section>
     </>
   );
 
