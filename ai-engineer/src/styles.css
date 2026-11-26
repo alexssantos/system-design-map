@@ -7,6 +7,8 @@
   --orange: #fcdcbd; --mint: #dff0de; --sand: #f6e6c9; --sky: #d6e5f6; --amber: #fbe5bd;
   --red-tile: #fbebe7; --red-tile-line: #ebbcb3; --red-soft: #f8d5cf; --red-ink: #7d241d;
   --drop: var(--ink); --drop-2: var(--ink-2);
+  --chk-line: #8f877c; --chk-bg: #fbf7f1; --chk-on-line: #1f3b1c; --chk-on: #a6d38b; --chk-on-ink: #12240f; --chk-part: #cde6ba;
+  --bar-line: #5d564e; --bar-top: #bddb9e;
   --tl-rail: #b9b0a3; --tl-dot-line: #5f584f; --tl-done: #e7efd9; --tl-hover: #ffffff;
   --hl: rgba(178, 212, 145, .8); --gloss: rgba(255, 255, 255, .6); --shade: rgba(80, 60, 35, .35);
   --grid: #e3d8c8; --pad: rgba(178, 212, 145, .45); --pad-line: #9fc27c;
@@ -32,6 +34,8 @@
   --orange: #5a4531; --mint: #3c5c3a; --sand: #5d4d32; --sky: #344961; --amber: #5a4b30;
   --red-tile: #45302b; --red-tile-line: #51312b; --red-soft: #5f3a33; --red-ink: #ebb2ad;
   --drop: #050403; --drop-2: #0b0907;
+  --chk-line: #897c6a; --chk-bg: #2e2923; --chk-on-line: #bddeba; --chk-on: #293820; --chk-on-ink: #bde1b7; --chk-part: #3c502d;
+  --bar-line: #b4aa9f; --bar-top: #344226;
   --tl-rail: #5c5346; --tl-dot-line: #b2a99e; --tl-done: #4f5c38; --tl-hover: #37312a;
   --hl: rgba(104, 146, 64, .64); --gloss: rgba(255, 240, 220, .04); --shade: rgba(0, 0, 0, .8);
   --grid: #38322b; --pad: rgba(104, 146, 64, .28); --pad-line: #5f7d43;
@@ -174,11 +178,26 @@ button.btn-pop:active:not(:disabled) { transform: translate(1px, 2px); box-shado
 .lesson.is-current .lesson__mark { color: var(--ink); }
 .lesson.is-soon > span { color: var(--muted-2); cursor: default; }
 .lesson.is-soon em { margin-left: auto; font-style: normal; font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; border: 1px solid var(--line-strong); border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
-.progress { padding: 12px 14px 4px; margin-top: 12px; background: var(--paper-2); }
-.progress__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.progress__pct { font-weight: 700; }
-.bar { border: 1.3px solid var(--ink-2); background: var(--raised); border-radius: 7px; height: 13px; margin-bottom: 10px; position: relative; overflow: hidden; }
-.bar span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(var(--green), var(--green-2)); border-right: 1.3px solid var(--ink-2); transition: width .6s; }
+.progress { padding: 0 16px; margin-top: 12px; background: var(--paper-2); }
+.progress__head { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; height: 46px; cursor: pointer; text-align: start; }
+.progress__head:focus-visible { outline: 2px solid var(--green-3); outline-offset: 2px; border-radius: 6px; }
+.progress__head .eyebrow { font-size: 13.5px; }
+.progress__pct { margin-left: auto; font-size: 12.5px; font-weight: 700; }
+.progress__chev { color: var(--muted); flex: 0 0 auto; transition: transform .3s cubic-bezier(.2, .7, .2, 1); }
+.progress.is-open .progress__chev { transform: rotate(-90deg); }
+.progress__body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s cubic-bezier(.2, .7, .2, 1); }
+.progress.is-open .progress__body { grid-template-rows: 1fr; }
+.progress__clip { min-height: 0; overflow: hidden; opacity: 0; transition: opacity .22s; }
+.progress.is-open .progress__clip { opacity: 1; }
+.progress__list { list-style: none; margin: 0; padding: 0 0 10px; }
+.progress__list li { display: flex; align-items: center; height: 27px; font-size: 12.5px; font-weight: 500; }
+.progress__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress__count { color: var(--muted); margin-left: auto; padding-left: 8px; }
+.check { display: grid; place-items: center; flex: 0 0 auto; width: 16px; height: 16px; margin-right: 12px; border: 1.3px solid var(--chk-line); background: var(--chk-bg); border-radius: 3px; transition: background .3s, border-color .3s; }
+.check.is-on { border-color: var(--chk-on-line); background: var(--chk-on); color: var(--chk-on-ink); }
+.check.is-part { background: linear-gradient(90deg, var(--chk-part) 50%, var(--chk-bg) 50%); }
+.bar { border: 1.3px solid var(--bar-line); background: var(--chk-bg); border-radius: 7px; height: 13px; margin: 0 0 10px; position: relative; overflow: hidden; }
+.bar span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(var(--bar-top), var(--green-2)); border-right: 1.3px solid var(--bar-line); border-radius: 0 6px 6px 0; transition: width .6s; }
 .bar span[style*='width: 0%'] { border: 0; }
 
 /* ───────── folha central ───────── */
@@ -380,9 +399,8 @@ path.blk__side[d*='A'] { stroke: var(--blk-edge); stroke-width: 1.8; stroke-line
 .learn ul { margin-top: 10px; }
 .learn li { display: flex; align-items: flex-start; font-size: 12px; line-height: 1.45; padding: 4px 0; color: var(--muted); transition: color .3s; }
 .learn li.is-on { color: var(--ink); }
-.check { border: 1.3px solid var(--muted-2); background: var(--raised); border-radius: 3px; flex: 0 0 auto; display: grid; place-items: center; width: 16px; height: 16px; margin: 1px 12px 0 0; transition: background .3s, border-color .3s; }
+.learn li .check { margin: 1px 12px 0 0; }
 .check svg { opacity: 0; transform: scale(.3); transition: opacity .2s, transform .32s cubic-bezier(.34, 1.56, .64, 1); }
-.check.is-on { border-color: var(--ink); background: var(--green-2); }
 .check.is-on svg { opacity: 1; transform: none; }
 .colophon { font-size: 10.5px; color: var(--muted-2); line-height: 1.5; padding: 0 4px; }
 
