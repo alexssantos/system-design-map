@@ -594,6 +594,7 @@ export default function App() {
                 replay={replay}
                 fitKey={fitKey}
                 onZoom={setZoomed}
+                board={!!step.board}
               />
             </div>
             {step.board && (
