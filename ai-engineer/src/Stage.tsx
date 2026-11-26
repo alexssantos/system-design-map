@@ -643,7 +643,7 @@ const LINK_OUT_MS = 300;
 const CAM_MS = 820;
 const BLEND_MS = 360;
 const PKT_OUT_MS = 260;
-const ZOOM_MAX = 1.6;
+const ZOOM_MAX = 1.25; // a referência vai até 1,6, mas nossas cenas têm menos objetos e ficavam grandes demais
 const ZOOM_MIN = 0.3;
 const MARGIN = 16;
 
@@ -735,7 +735,7 @@ function sceneBounds(sc: Scene, k: number): Box {
   return b;
 }
 
-/** enquadra a cena como o original: zoom em passos de 0,05 entre 0,3 e 1,6, margem de 16 px, e mantém o quadro quando ainda cabe */
+/** enquadra a cena como o original: zoom em passos de 0,05 entre 0,3 e 1,25, margem de 16 px, e mantém o quadro quando ainda cabe */
 function fitCam(b: Box, size: { w: number; h: number }, prev: { cam: Cam; zoom: number } | null) {
   const bw = Math.max(1, b.x1 - b.x0);
   const bh = Math.max(1, b.y1 - b.y0);
